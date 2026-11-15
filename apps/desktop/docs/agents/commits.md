@@ -78,4 +78,4 @@ pnpm exec commitlint --last
 echo "feat(player): your subject" | pnpm exec commitlint
 ```
 
-CI runs commitlint over the PR or push range (see `.github/workflows/test.yml`).
+The upstream CI workflow is not active in this nested application. Run commitlint locally or configure a project-level workflow when CI is added.

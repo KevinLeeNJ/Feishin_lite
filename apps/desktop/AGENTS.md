@@ -39,7 +39,7 @@ App logging (renderer `logger` / main `log`): read `docs/agents/logging.md` when
 
 ### Commits
 
-Conventional Commits + allowed scopes: read `docs/agents/commits.md` when writing a commit message. Enforced by commitlint in CI.
+Conventional Commits + allowed scopes: read `docs/agents/commits.md` when writing a commit message. Commitlint can be run locally.
 
 ## Working mode
 
