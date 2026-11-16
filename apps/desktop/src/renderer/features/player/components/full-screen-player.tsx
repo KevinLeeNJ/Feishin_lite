@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { AnimatePresence, motion, Variants } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion, Variants } from 'motion/react';
 import {
     CSSProperties,
     memo,
@@ -14,6 +14,7 @@ import { useLocation } from 'react-router';
 import styles from './full-screen-player.module.css';
 
 import { useItemImageUrl } from '/@/renderer/components/item-image/item-image';
+import { AmllBackground } from '/@/renderer/features/player/components/amll-background';
 import { FullScreenPlayerImage } from '/@/renderer/features/player/components/full-screen-player-image';
 import {
     FullScreenPlayerControls,
@@ -285,6 +286,8 @@ const PlayerContainer = memo(
             src: imageUrl,
             srcLoaded: true,
         });
+        const reducedMotion = useReducedMotion();
+        const amllBackgroundActive = !!dynamicBackground && !!dynamicIsImage && !reducedMotion;
 
         return (
             <motion.div
@@ -296,10 +299,14 @@ const PlayerContainer = memo(
                 transition={{ duration: 2 }}
                 variants={containerVariants}
             >
-                <BackgroundImage
-                    dynamicBackground={dynamicBackground}
-                    dynamicIsImage={dynamicIsImage}
-                />
+                {amllBackgroundActive ? (
+                    <AmllBackground />
+                ) : (
+                    <BackgroundImage
+                        dynamicBackground={dynamicBackground}
+                        dynamicIsImage={dynamicIsImage}
+                    />
+                )}
                 <BackgroundOverlay dynamicBackground={dynamicBackground} opacity={opacity} />
                 {children}
             </motion.div>
@@ -324,6 +331,8 @@ export const FullScreenPlayer = () => {
 
     const isPlayingRadio = isRadioActive && isRadioPlaying;
     const effectiveDynamicBackground = dynamicBackground && !isPlayingRadio;
+    const reducedMotion = useReducedMotion();
+    const amllBackgroundActive = !!effectiveDynamicBackground && !!dynamicIsImage && !reducedMotion;
 
     const location = useLocation();
     const isOpenedRef = useRef<boolean | null>(null);
@@ -355,10 +364,12 @@ export const FullScreenPlayer = () => {
             >
                 <SharedFullscreenPlayerSettings />
             </Group>
-            <BackgroundImageOverlay
-                dynamicBackground={effectiveDynamicBackground}
-                dynamicImageBlur={dynamicImageBlur}
-            />
+            {!amllBackgroundActive && (
+                <BackgroundImageOverlay
+                    dynamicBackground={effectiveDynamicBackground}
+                    dynamicImageBlur={dynamicImageBlur}
+                />
+            )}
             <div className={styles.responsiveContainer}>
                 <div
                     className={clsx(styles.imageColumn, {

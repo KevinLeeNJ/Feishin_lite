@@ -116,33 +116,6 @@ export const LyricsSettingsForm = ({ settingsKey }: LyricsSettingsFormProps) => 
         {
             component: (
                 <Slider
-                    defaultValue={displaySettings.gap}
-                    label={(value) => `${value}px`}
-                    marks={[
-                        { label: '0', value: 0 },
-                        { label: '25', value: 25 },
-                        { label: '50', value: 50 },
-                    ]}
-                    max={50}
-                    min={0}
-                    onChangeEnd={(value) => {
-                        updateDisplaySetting({ gap: value });
-                    }}
-                    step={1}
-                    w="75%"
-                />
-            ),
-            description: t('page.fullscreenPlayer.config.lyricGapSynchronized', {
-                context: 'description',
-            }),
-            id: 'gap',
-            label: t(
-                `${t('page.fullscreenPlayer.config.lyricGap')} (${t('page.fullscreenPlayer.config.synchronized')})`,
-            ),
-        },
-        {
-            component: (
-                <Slider
                     defaultValue={displaySettings.gapUnsync}
                     label={(value) => `${value}px`}
                     marks={[
@@ -243,19 +216,6 @@ export const LyricsSettingsForm = ({ settingsKey }: LyricsSettingsFormProps) => 
         },
         {
             component: (
-                <ListConfigBooleanControl
-                    onChange={(value) => updateLyricsSetting({ follow: value })}
-                    value={lyricsSettings.follow}
-                />
-            ),
-            description: t('page.fullscreenPlayer.config.followCurrentLyric', {
-                context: 'description',
-            }),
-            id: 'follow',
-            label: t('page.fullscreenPlayer.config.followCurrentLyric'),
-        },
-        {
-            component: (
                 <Slider
                     defaultValue={lyricsSettings.followScrollAlignment ?? 0}
                     label={(value) => value.toString()}
@@ -300,62 +260,6 @@ export const LyricsSettingsForm = ({ settingsKey }: LyricsSettingsFormProps) => 
             }),
             id: 'lineLeadTimeMs',
             label: t('page.fullscreenPlayer.config.lyricLineLeadTime'),
-        },
-        {
-            component: (
-                <Slider
-                    defaultValue={displaySettings.opacityNonActive}
-                    label={(e) => (e * 100).toFixed(0) + '%'}
-                    marks={[
-                        { label: '0%', value: 0 },
-                        { label: '25%', value: 0.25 },
-                        { label: '50%', value: 0.5 },
-                        { label: '75%', value: 0.75 },
-                        { label: '100%', value: 1 },
-                    ]}
-                    max={1.0}
-                    min={0.0}
-                    onChangeEnd={(e) => {
-                        updateDisplaySetting({
-                            opacityNonActive: e,
-                        });
-                    }}
-                    step={0.01}
-                    w="100%"
-                />
-            ),
-            description: t('page.fullscreenPlayer.config.lyricOpacityNonActive', {
-                context: 'description',
-            }),
-            id: 'opacityNonActive',
-            label: t('page.fullscreenPlayer.config.lyricOpacityNonActive'),
-        },
-        {
-            component: (
-                <Slider
-                    defaultValue={displaySettings.scaleNonActive}
-                    label={(e) => (e * 100).toFixed(0) + '%'}
-                    marks={[
-                        { label: '50%', value: 0.5 },
-                        { label: '75%', value: 0.75 },
-                        { label: '100%', value: 1 },
-                    ]}
-                    max={1.0}
-                    min={0.5}
-                    onChangeEnd={(e) => {
-                        updateDisplaySetting({
-                            scaleNonActive: e,
-                        });
-                    }}
-                    step={0.01}
-                    w="100%"
-                />
-            ),
-            description: t('page.fullscreenPlayer.config.lyricScaleNonActive', {
-                context: 'description',
-            }),
-            id: 'scaleNonActive',
-            label: t('page.fullscreenPlayer.config.lyricScaleNonActive'),
         },
         {
             component: (
@@ -484,18 +388,18 @@ export const LyricsSettingsForm = ({ settingsKey }: LyricsSettingsFormProps) => 
             component: (
                 <ListConfigBooleanControl
                     onChange={(value) => {
-                        updateLyricsSetting({ enableNeteaseTranslation: value });
-                        localSettings?.set('enableNeteaseTranslation', value);
+                        updateLyricsSetting({ fetchTranslation: value });
+                        localSettings?.set('fetchTranslation', value);
                     }}
-                    value={lyricsSettings.enableNeteaseTranslation}
+                    value={lyricsSettings.fetchTranslation}
                 />
             ),
-            description: t('setting.neteaseTranslation', {
+            description: t('setting.fetchTranslation', {
                 context: 'description',
             }),
-            id: 'enableNeteaseTranslation',
+            id: 'fetchTranslation',
             isHidden: !isElectron(),
-            label: t('setting.neteaseTranslation'),
+            label: t('setting.fetchTranslation'),
         },
     ];
 

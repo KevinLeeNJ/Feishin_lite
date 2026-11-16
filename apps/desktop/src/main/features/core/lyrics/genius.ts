@@ -1,15 +1,14 @@
 import axios, { AxiosResponse } from 'axios';
 import { load } from 'cheerio';
 
-import {
-    InternetProviderLyricResponse,
-    InternetProviderLyricSearchResponse,
-    LyricSearchQuery,
-    LyricSource,
-} from '.';
 import { orderSearchResults } from './shared';
 
 import log from '/@/main/logger';
+import {
+    InternetProviderLyricSearchResponse,
+    LyricSearchQuery,
+    LyricSource,
+} from '/@/shared/types/domain-types';
 
 const SEARCH_URL = 'https://genius.com/api/search/song';
 
@@ -159,56 +158,4 @@ export async function getSearchResults(
     });
 
     return orderSearchResults({ params, results: songResults });
-}
-
-export async function query(
-    params: LyricSearchQuery,
-): Promise<InternetProviderLyricResponse | null> {
-    const response = await getSongId(params);
-    if (!response) {
-        return null;
-    }
-
-    const lyrics = await getLyricsBySongId(response.id);
-    if (!lyrics) {
-        return null;
-    }
-
-    return {
-        artist: response.artist,
-        id: response.id,
-        lyrics,
-        name: response.name,
-        source: LyricSource.GENIUS,
-    };
-}
-
-async function getSongId(
-    params: LyricSearchQuery,
-): Promise<null | Omit<InternetProviderLyricResponse, 'lyrics'>> {
-    let result: AxiosResponse<GeniusResponse>;
-    try {
-        result = await axios.get(SEARCH_URL, {
-            params: {
-                per_page: '1',
-                q: `${params.artist} ${params.name}`,
-            },
-        });
-    } catch (e) {
-        log.error('Genius search request got an error!', (e as Error)?.message);
-        return null;
-    }
-
-    const hit = result.data.response?.sections?.[0]?.hits?.[0]?.result;
-
-    if (!hit) {
-        return null;
-    }
-
-    return {
-        artist: hit.artist_names,
-        id: hit.url,
-        name: hit.title,
-        source: LyricSource.GENIUS,
-    };
 }

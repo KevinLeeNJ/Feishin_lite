@@ -8,8 +8,10 @@ import styles from './lyrics.module.css';
 import { queryKeys } from '/@/renderer/api/query-keys';
 import { eventEmitter } from '/@/renderer/events/event-emitter';
 import { PlayerLyricsFetchedEventPayload } from '/@/renderer/events/events';
+import { AmllLyricsView, AmllLyricsViewProps } from '/@/renderer/features/lyrics/amll-lyrics-view';
 import { translateLyrics } from '/@/renderer/features/lyrics/api/lyric-translate';
 import {
+    bumpLyricsGeneration,
     computeSelectedFromResult,
     getDisplayOffset,
     lyricsQueries,
@@ -29,11 +31,6 @@ import {
     useSyncedRomajiLyrics,
 } from '/@/renderer/features/lyrics/hooks/use-furigana-lyrics';
 import { LyricsActions } from '/@/renderer/features/lyrics/lyrics-actions';
-import { SynchronizedKaraokeLyrics } from '/@/renderer/features/lyrics/synchronized-karaoke-lyrics';
-import {
-    SynchronizedLyrics,
-    SynchronizedLyricsProps,
-} from '/@/renderer/features/lyrics/synchronized-lyrics';
 import {
     UnsynchronizedLyrics,
     UnsynchronizedLyricsProps,
@@ -50,7 +47,7 @@ import { Group } from '/@/shared/components/group/group';
 import { Spinner } from '/@/shared/components/spinner/spinner';
 import { Text } from '/@/shared/components/text/text';
 import { useLocalStorage } from '/@/shared/hooks/use-local-storage';
-import { LyricsOverride } from '/@/shared/types/domain-types';
+import { LyricsOverride, SynchronizedLyrics } from '/@/shared/types/domain-types';
 
 type LyricsProps = {
     fadeOutNoLyricsMessage?: boolean;
@@ -68,6 +65,7 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
         enableAutoTranslation,
         enableFurigana,
         enableRomaji,
+        lineLeadTimeMs,
         preferLocalLyrics,
         translationApiKey,
         translationApiProvider,
@@ -227,26 +225,18 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
             (entry) => entry.synced && entry.kind === 'pronunciation',
         );
 
-        return layer?.synced ? layer.lyrics : null;
-    }, [visibleOverlayLayers]);
+        if (layer?.synced) return layer.lyrics;
+        return data?.selectedRomanization ?? null;
+    }, [visibleOverlayLayers, data?.selectedRomanization]);
 
     const translationLyricsOverlay = useMemo(() => {
         const layer = visibleOverlayLayers.find(
             (entry) => entry.synced && entry.kind === 'translation',
         );
 
-        return layer?.synced ? layer.lyrics : null;
-    }, [visibleOverlayLayers]);
-
-    const extraOverlayLyrics = useMemo(() => {
-        return visibleOverlayLayers
-            .filter(
-                (entry) =>
-                    entry.synced && entry.kind !== 'pronunciation' && entry.kind !== 'translation',
-            )
-            .map((entry) => (entry.synced ? entry.lyrics : null))
-            .filter((entry): entry is NonNullable<typeof entry> => entry != null);
-    }, [visibleOverlayLayers]);
+        if (layer?.synced) return layer.lyrics;
+        return data?.selectedTranslation ?? null;
+    }, [visibleOverlayLayers, data?.selectedTranslation]);
 
     const selectedAgents = useMemo(() => {
         if (!lyrics || !('synced' in lyrics) || !lyrics.synced) {
@@ -270,29 +260,31 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
         shouldGenerateSyncedRomaji,
     );
 
-    const isKaraoke = useMemo(() => {
-        if (!synced || !displayLyrics || !('lyrics' in displayLyrics)) {
-            return false;
-        }
-
-        return Array.isArray(displayLyrics.lyrics) && lyricsHasWordCues(displayLyrics.lyrics);
-    }, [displayLyrics, synced]);
-
-    const syncedLyricsProps = useMemo(() => {
-        if (!displayLyrics) {
+    const syncedLyricsProps = useMemo((): AmllLyricsViewProps | null => {
+        if (
+            !displayLyrics ||
+            !('lyrics' in displayLyrics) ||
+            !Array.isArray(displayLyrics.lyrics)
+        ) {
             return null;
         }
 
         return {
-            ...(displayLyrics as SynchronizedLyricsProps),
-            extraOverlayLyrics: isKaraoke ? extraOverlayLyrics : undefined,
-            offsetMs: displayOffsetMs,
+            agents: selectedAgents,
+            artist: displayLyrics.artist,
+            lyrics: displayLyrics.lyrics as SynchronizedLyrics,
+            name: displayLyrics.name,
+            // The lead time shifts the lyric clock ahead of the audio so the
+            // current line surfaces early; it is a display preference, not part
+            // of the sync offset shown in the lyrics actions.
+            offsetMs: displayOffsetMs + lineLeadTimeMs,
             pronunciationLyrics: pronunciationLyricsOverlay,
             romajiLyrics:
                 enableRomaji && !useServerPronunciation && !shouldGenerateSyncedRomaji
-                    ? (romajiConvertedLyrics as SynchronizedLyricsProps['romajiLyrics'])
+                    ? ((romajiConvertedLyrics ?? null) as null | SynchronizedLyrics)
                     : null,
             settingsKey,
+            source: displayLyrics.source,
             syncedRomajiLyrics: shouldGenerateSyncedRomaji ? (syncedRomajiLyrics ?? null) : null,
             translatedLyrics:
                 showTranslation && !translationLyricsOverlay ? translatedLyrics : null,
@@ -302,10 +294,10 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
         displayLyrics,
         displayOffsetMs,
         enableRomaji,
-        extraOverlayLyrics,
-        isKaraoke,
+        lineLeadTimeMs,
         pronunciationLyricsOverlay,
         romajiConvertedLyrics,
+        selectedAgents,
         shouldGenerateSyncedRomaji,
         syncedRomajiLyrics,
         settingsKey,
@@ -318,6 +310,7 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
     const handleOnSearchOverride = useCallback(
         (params: LyricsOverride) => {
             if (!lyricsKey) return;
+            bumpLyricsGeneration(lyricsKey);
             queryClient.setQueryData<LyricsQueryResult>(lyricsKey, (prev) =>
                 prev ? { ...prev, overrideSelection: params } : prev,
             );
@@ -378,6 +371,12 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
     const handleOnRemoveLyric = useCallback(async () => {
         if (!currentSong || !lyricsKey) return;
 
+        bumpLyricsGeneration(lyricsKey);
+        // "Clear" (lyrics shown) dismisses the remote upgrade for this view only;
+        // "refresh" (nothing shown) must re-enable the auto fetch. The suppress flag
+        // is one-shot: the next fetch consumes it, so re-entering the song restores
+        // the automatic word-level upgrade instead of latching plain LRC forever.
+        const dismissRemote = !!data?.selected;
         queryClient.setQueryData<LyricsQueryResult>(lyricsKey, (prev) =>
             prev
                 ? {
@@ -385,12 +384,12 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
                       overrideData: null,
                       overrideSelection: null,
                       remoteAuto: null,
-                      suppressRemoteAuto: true,
+                      suppressRemoteAuto: dismissRemote,
                   }
                 : prev,
         );
         await queryClient.invalidateQueries({ queryKey: lyricsKey });
-    }, [currentSong, lyricsKey]);
+    }, [currentSong, data?.selected, lyricsKey]);
 
     const fetchTranslation = useCallback(async () => {
         if (!lyrics || isLyricsDisabled) return;
@@ -547,14 +546,7 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
                                 transition={{ duration: 0.5 }}
                             >
                                 {synced && syncedLyricsProps ? (
-                                    isKaraoke ? (
-                                        <SynchronizedKaraokeLyrics
-                                            {...syncedLyricsProps}
-                                            agents={selectedAgents}
-                                        />
-                                    ) : (
-                                        <SynchronizedLyrics {...syncedLyricsProps} />
-                                    )
+                                    <AmllLyricsView {...syncedLyricsProps} />
                                 ) : (
                                     <UnsynchronizedLyrics
                                         {...(displayLyrics as UnsynchronizedLyricsProps)}

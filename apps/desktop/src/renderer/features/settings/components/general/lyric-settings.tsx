@@ -35,19 +35,6 @@ export const LyricSettings = memo(() => {
         {
             control: (
                 <Switch
-                    aria-label="Follow lyrics"
-                    defaultChecked={settings.follow}
-                    onChange={(e) => updateSetting({ follow: e.currentTarget.checked })}
-                />
-            ),
-            description: t('setting.followLyric', {
-                context: 'description',
-            }),
-            title: t('setting.followLyric'),
-        },
-        {
-            control: (
-                <Switch
                     aria-label="Prefer local lyrics"
                     defaultChecked={settings.preferLocalLyrics}
                     onChange={(e) => updateSetting({ preferLocalLyrics: e.currentTarget.checked })}
@@ -122,20 +109,20 @@ export const LyricSettings = memo(() => {
         {
             control: (
                 <Switch
-                    aria-label="Enable NetEase translations"
-                    defaultChecked={settings.enableNeteaseTranslation}
+                    aria-label="Fetch translated lyrics"
+                    defaultChecked={settings.fetchTranslation}
                     onChange={(e) => {
                         const isChecked = e.currentTarget.checked;
-                        updateSetting({ enableNeteaseTranslation: isChecked });
-                        localSettings?.set('enableNeteaseTranslation', isChecked);
+                        updateSetting({ fetchTranslation: isChecked });
+                        localSettings?.set('fetchTranslation', isChecked);
                     }}
                 />
             ),
-            description: t('setting.neteaseTranslation', {
+            description: t('setting.fetchTranslation', {
                 context: 'description',
             }),
             isHidden: !isElectron(),
-            title: t('setting.neteaseTranslation'),
+            title: t('setting.fetchTranslation'),
         },
         {
             control: (

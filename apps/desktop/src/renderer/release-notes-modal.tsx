@@ -8,9 +8,12 @@ import { useTranslation } from 'react-i18next';
 import packageJson from '../../package.json';
 
 import {
+    GITHUB_COMPARE_URL,
     GITHUB_RELEASES_URL,
     type GitHubRelease,
+    isReleaseFeedConfigured,
     parseVersionFromTag,
+    RELEASES_PAGE_BASE,
     RELEASES_TO_FETCH,
     toTag,
     useGithubReleasesList,
@@ -26,8 +29,6 @@ import { Spinner } from '/@/shared/components/spinner/spinner';
 import { Stack } from '/@/shared/components/stack/stack';
 import { Text } from '/@/shared/components/text/text';
 import { useLocalStorage } from '/@/shared/hooks/use-local-storage';
-
-const GITHUB_COMPARE_URL = 'https://api.github.com/repos/jeffvli/feishin/compare';
 
 interface GitHubCompareCommit {
     commit: {
@@ -86,7 +87,7 @@ const ReleaseNotesContent = ({ onDismiss, version }: ReleaseNotesContentProps) =
         isError: isCompareError,
         isLoading: isCompareLoading,
     } = useQuery({
-        enabled: isAlpha && !!latestStableRelease,
+        enabled: isReleaseFeedConfigured && isAlpha && !!latestStableRelease,
         queryFn: async () => {
             const base = latestStableRelease!.tag_name;
             const head = 'development';
@@ -106,7 +107,7 @@ const ReleaseNotesContent = ({ onDismiss, version }: ReleaseNotesContentProps) =
         isError,
         isLoading,
     } = useQuery({
-        enabled: !isAlpha,
+        enabled: isReleaseFeedConfigured && !isAlpha,
         queryFn: async () => {
             const response = await axios.get<GitHubRelease>(
                 `${GITHUB_RELEASES_URL}/tags/${toTag(selectedVersion)}`,
@@ -119,7 +120,7 @@ const ReleaseNotesContent = ({ onDismiss, version }: ReleaseNotesContentProps) =
 
     // Convert markdown to HTML using GitHub's markdown API
     const { data: htmlContent, isLoading: isConverting } = useQuery({
-        enabled: !isAlpha && !!releaseData?.body,
+        enabled: isReleaseFeedConfigured && !isAlpha && !!releaseData?.body,
         queryFn: async () => {
             const response = await axios.post(
                 'https://api.github.com/markdown',
@@ -196,8 +197,8 @@ const ReleaseNotesContent = ({ onDismiss, version }: ReleaseNotesContentProps) =
                         component="a"
                         href={
                             showCompareError
-                                ? `https://github.com/jeffvli/feishin/compare/${latestStableRelease.tag_name}...${toTag(selectedVersion)}`
-                                : `https://github.com/jeffvli/feishin/releases/tag/${toTag(selectedVersion)}`
+                                ? `${RELEASES_PAGE_BASE}/compare/${latestStableRelease.tag_name}...${toTag(selectedVersion)}`
+                                : `${RELEASES_PAGE_BASE}/tag/${toTag(selectedVersion)}`
                         }
                         onClick={onDismiss}
                         rightSection={<Icon icon="externalLink" />}
@@ -230,7 +231,7 @@ const ReleaseNotesContent = ({ onDismiss, version }: ReleaseNotesContentProps) =
                 <Group justify="flex-end">
                     <Button
                         component="a"
-                        href={`https://github.com/jeffvli/feishin/releases/tag/${toTag(selectedVersion)}`}
+                        href={`${RELEASES_PAGE_BASE}/tag/${toTag(selectedVersion)}`}
                         onClick={onDismiss}
                         rightSection={<Icon icon="externalLink" />}
                         target="_blank"
@@ -248,7 +249,7 @@ const ReleaseNotesContent = ({ onDismiss, version }: ReleaseNotesContentProps) =
 
     if (isAlpha && compareData) {
         const commits = compareData.commits ?? [];
-        const compareUrl = `https://github.com/jeffvli/feishin/compare/${latestStableRelease?.tag_name}...development`;
+        const compareUrl = `${RELEASES_PAGE_BASE}/compare/${latestStableRelease?.tag_name}...development`;
         return (
             <Stack gap="md">
                 {releaseOptions.length > 1 && (
@@ -355,7 +356,7 @@ const ReleaseNotesContent = ({ onDismiss, version }: ReleaseNotesContentProps) =
             <Group justify="flex-end">
                 <Button
                     component="a"
-                    href={`https://github.com/jeffvli/feishin/releases/tag/${toTag(selectedVersion)}`}
+                    href={`${RELEASES_PAGE_BASE}/tag/${toTag(selectedVersion)}`}
                     onClick={onDismiss}
                     rightSection={<Icon icon="externalLink" />}
                     target="_blank"
@@ -397,6 +398,8 @@ const ReleaseNotesModalContentWrapper = ({
 };
 
 export const openReleaseNotesModal = (title: string) => {
+    // Stub: no changelog until this fork's release feed is configured.
+    if (!isReleaseFeedConfigured) return;
     const dismissRef = { current: null as (() => void) | null };
 
     openModal({
@@ -419,6 +422,10 @@ export const ReleaseNotesModal = () => {
     const dismissRef = useRef<(() => void) | null>(null);
 
     useEffect(() => {
+        // Stub: skip the on-update changelog until this fork's release feed exists.
+        if (!isReleaseFeedConfigured) {
+            return undefined;
+        }
         const timeoutId = setTimeout(() => {
             const valueFromLocalStorage = localStorage.getItem('version');
             const versionString = `"${version}"`;

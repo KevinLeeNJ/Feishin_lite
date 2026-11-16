@@ -1384,9 +1384,17 @@ export type FavoriteSongListResponse = BasePaginatedResponse<Song[]>;
 
 export type FullLyricsMetadata = Omit<InternetProviderLyricResponse, 'id' | 'lyrics' | 'source'> & {
     lyrics: LyricsResponse;
+    /** Match confidence in [0, 1]; higher is a closer metadata match. */
+    matchConfidence?: number;
     offsetMs?: null | number;
     remote: boolean;
+    /** Provider-side candidate id used to refetch or bind this result. */
+    remoteId?: string;
     source: string;
+    /** Original provider format, e.g. lrc/yrc/qrc/krc/text. */
+    sourceFormat?: LyricsSourceFormat;
+    /** Timing granularity of `lyrics`; word means real per-word cues exist. */
+    timingGranularity?: LyricsTimingGranularity;
 };
 
 export type GetScanStatusArgs = BaseEndpointArgs;
@@ -1403,6 +1411,8 @@ export type InternetProviderLyricResponse = {
 
 export type InternetProviderLyricSearchResponse = {
     artist: string;
+    /** Candidate track duration in seconds, when the source reports it. Used for duration-aware ranking. */
+    duration?: number;
     id: string;
     isSync: boolean | null;
     name: string;
@@ -1422,6 +1432,13 @@ export type LyricsArgs = BaseEndpointArgs & {
     query: LyricsQuery;
 };
 
+/** Options controlling provider fetch behavior, derived from renderer lyrics settings. */
+export type LyricsFetchOptions = {
+    fetchRomanization: boolean;
+    fetchTranslation: boolean;
+    sources: LyricSource[];
+};
+
 export type LyricsKind = 'main' | 'pronunciation' | 'translation';
 
 export type LyricsQuery = {
@@ -1429,6 +1446,24 @@ export type LyricsQuery = {
 };
 
 export type LyricsResponse = string | SynchronizedLyrics;
+
+/** Identifies a song's lyrics cache/binding entry, isolated per server and account. */
+export type LyricsScope = {
+    accountId: string;
+    serverId: string;
+    songId: string;
+};
+
+export type LyricsSourceFormat = 'krc' | 'lrc' | 'qrc' | 'text' | 'yrc';
+
+export type LyricsTimingGranularity = 'line' | 'word';
+
+/** A normalized provider lyrics result with optional translation/romanization overlay tracks. */
+export type ProviderLyricsResult = {
+    lyrics: FullLyricsMetadata;
+    romanization: null | SynchronizedLyrics;
+    translation: null | SynchronizedLyrics;
+};
 
 export type RandomSongListArgs = BaseEndpointArgs & {
     query: RandomSongListQuery;
@@ -1448,6 +1483,12 @@ export type RandomSongListResponse = SongListResponse;
 export type RefreshItemsArgs = BaseEndpointArgs & { query: { ids: string[] } };
 
 export type RefreshItemsResponse = null;
+
+/** Auto-fetch outcome: the primary result plus ranked fallback candidates for the word-level cascade. */
+export type RemoteLyricsAutoResult = {
+    fallbacks: InternetProviderLyricSearchResponse[];
+    result: null | ProviderLyricsResult;
+};
 
 export type ScanStatus = {
     count: number;
@@ -1562,8 +1603,10 @@ export const instanceOfCancellationError = (error: any) => {
 
 export enum LyricSource {
     GENIUS = 'Genius',
+    KUGOU = 'Kugou',
     LRCLIB = 'lrclib.net',
     NETEASE = 'NetEase',
+    QQMUSIC = 'QQ Music',
     SIMPMUSIC = 'SimpMusic',
 }
 

@@ -1,14 +1,13 @@
 import axios, { AxiosResponse } from 'axios';
 
-import {
-    InternetProviderLyricResponse,
-    InternetProviderLyricSearchResponse,
-    LyricSearchQuery,
-    LyricSource,
-} from '.';
 import { orderSearchResults } from './shared';
 
 import log from '/@/main/logger';
+import {
+    InternetProviderLyricSearchResponse,
+    LyricSearchQuery,
+    LyricSource,
+} from '/@/shared/types/domain-types';
 
 const API_URL = 'https://api-lyrics.simpmusic.org/v1';
 
@@ -73,6 +72,7 @@ export async function getSearchResults(
 
     const songResults: InternetProviderLyricSearchResponse[] = result.data.data.map((song) => ({
         artist: song.artistName,
+        duration: song.durationSeconds,
         id: song.videoId,
         isSync: song.syncedLyrics ? true : false,
         name: song.songTitle,
@@ -80,49 +80,4 @@ export async function getSearchResults(
     }));
 
     return orderSearchResults({ params, results: songResults });
-}
-
-export async function query(
-    params: LyricSearchQuery,
-): Promise<InternetProviderLyricResponse | null> {
-    if (!params.name) return null;
-
-    let search: AxiosResponse<SimpMusicSearchResponse>;
-
-    try {
-        search = await axios.get<SimpMusicSearchResponse>(`${API_URL}/search`, {
-            params: {
-                q: params.name,
-            },
-            timeout: TIMEOUT_MS,
-        });
-    } catch (e) {
-        log.error('SimpMusic search errored:', (e as Error).message);
-        return null;
-    }
-
-    const first = search.data?.data?.[0];
-    if (!first) return null;
-
-    let lyric: AxiosResponse<SimpMusicLyric>;
-
-    try {
-        lyric = await axios.get<SimpMusicLyric>(`${API_URL}/${first.videoId}`, {
-            timeout: TIMEOUT_MS,
-        });
-    } catch (e) {
-        log.error('SimpMusic lyrics fetch errored:', (e as Error).message);
-        return null;
-    }
-
-    const lyrics = lyric.data.syncedLyrics || lyric.data.plainLyric || null;
-    if (!lyrics) return null;
-
-    return {
-        artist: lyric.data.artistName,
-        id: lyric.data.videoId,
-        lyrics,
-        name: lyric.data.songTitle,
-        source: LyricSource.SIMPMUSIC,
-    };
 }

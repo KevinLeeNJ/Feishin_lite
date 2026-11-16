@@ -107,7 +107,6 @@ export const store = new Store<any>({
     cwd: storePath,
     defaults: {
         disable_auto_updates: false,
-        enableNeteaseTranslation: false,
         global_media_hotkeys: true,
         lyrics: ['NetEase', 'lrclib.net'],
         mediaSession: false,

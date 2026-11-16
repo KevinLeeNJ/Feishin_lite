@@ -8,14 +8,9 @@ import { useTranslation } from 'react-i18next';
 import styles from './lyrics-search-form.module.css';
 
 import i18n from '/@/i18n/i18n';
+import { AmllLyricsView } from '/@/renderer/features/lyrics/amll-lyrics-view';
 import { lyricsQueries } from '/@/renderer/features/lyrics/api/lyrics-api';
-import { lyricsHasWordCues } from '/@/renderer/features/lyrics/api/lyrics-utils';
 import { openLyricsExportModal } from '/@/renderer/features/lyrics/components/lyrics-export-form';
-import { SynchronizedKaraokeLyrics } from '/@/renderer/features/lyrics/synchronized-karaoke-lyrics';
-import {
-    SynchronizedLyrics,
-    SynchronizedLyricsProps,
-} from '/@/renderer/features/lyrics/synchronized-lyrics';
 import {
     UnsynchronizedLyrics,
     UnsynchronizedLyricsProps,
@@ -38,6 +33,7 @@ import {
     InternetProviderLyricSearchResponse,
     LyricSource,
     LyricsOverride,
+    SynchronizedLyrics,
 } from '/@/shared/types/domain-types';
 
 interface SearchResultProps {
@@ -136,6 +132,8 @@ export const LyricsSearchForm = ({ artist, name, onSearchOverride }: LyricSearch
         }),
     );
 
+    const previewLyrics = previewData ? previewData.lyrics.lyrics : null;
+
     const searchResults = useMemo(() => {
         if (!data) return [];
 
@@ -163,16 +161,16 @@ export const LyricsSearchForm = ({ artist, name, onSearchOverride }: LyricSearch
     };
 
     const handleExport = () => {
-        if (selectedResult && previewData) {
+        if (selectedResult && previewLyrics) {
             const lyricsMetadata: FullLyricsMetadata = {
                 artist: selectedResult.artist,
-                lyrics: previewData,
+                lyrics: previewLyrics,
                 name: selectedResult.name,
                 offsetMs: null,
                 remote: true,
                 source: selectedResult.source,
             };
-            const synced = Array.isArray(previewData);
+            const synced = Array.isArray(previewLyrics);
             openLyricsExportModal({ lyrics: lyricsMetadata, offsetMs: delayMs, synced });
         }
     };
@@ -254,37 +252,18 @@ export const LyricsSearchForm = ({ artist, name, onSearchOverride }: LyricSearch
                         >
                             {isPreviewLoading ? (
                                 <Spinner container />
-                            ) : previewData ? (
-                                Array.isArray(previewData) ? (
-                                    lyricsHasWordCues(previewData) ? (
-                                        <SynchronizedKaraokeLyrics
-                                            preview
-                                            {...({
-                                                artist: selectedResult.artist,
-                                                lyrics: previewData,
-                                                name: selectedResult.name,
-                                                remote: true,
-                                                source: selectedResult.source,
-                                            } as SynchronizedLyricsProps)}
-                                        />
-                                    ) : (
-                                        <SynchronizedLyrics
-                                            preview
-                                            {...({
-                                                artist: selectedResult.artist,
-                                                lyrics: previewData,
-                                                name: selectedResult.name,
-                                                remote: true,
-                                                source: selectedResult.source,
-                                            } as SynchronizedLyricsProps)}
-                                        />
-                                    )
+                            ) : previewLyrics ? (
+                                Array.isArray(previewLyrics) ? (
+                                    <AmllLyricsView
+                                        lyrics={previewLyrics as SynchronizedLyrics}
+                                        preview
+                                    />
                                 ) : (
                                     <UnsynchronizedLyrics
                                         preview
                                         {...({
                                             artist: selectedResult.artist,
-                                            lyrics: previewData,
+                                            lyrics: previewLyrics,
                                             name: selectedResult.name,
                                             remote: true,
                                             source: selectedResult.source,

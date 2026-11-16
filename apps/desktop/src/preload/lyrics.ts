@@ -4,26 +4,46 @@ import {
     InternetProviderLyricSearchResponse,
     LyricGetQuery,
     LyricSearchQuery,
-    LyricSource,
-} from '../main/features/core/lyrics';
+    LyricsFetchOptions,
+    LyricsScope,
+    ProviderLyricsResult,
+    QueueSong,
+    RemoteLyricsAutoResult,
+} from '/@/shared/types/domain-types';
+import { LyricSource } from '/@/shared/types/domain-types';
 
-import { QueueSong } from '/@/shared/types/domain-types';
+const getRemoteLyricsBySong = (
+    song: QueueSong,
+    options: LyricsFetchOptions,
+    scope: LyricsScope,
+): Promise<RemoteLyricsAutoResult> => {
+    return ipcRenderer.invoke('lyric-by-song', { options, scope, song });
+};
 
-const getRemoteLyricsBySong = (song: QueueSong) => {
-    const result = ipcRenderer.invoke('lyric-by-song', song);
-    return result;
+const cascadeWordLevelLyrics = (
+    fallbacks: InternetProviderLyricSearchResponse[],
+    options: LyricsFetchOptions,
+    scope: LyricsScope,
+): Promise<null | ProviderLyricsResult> => {
+    return ipcRenderer.invoke('lyric-cascade-word-level', { fallbacks, options, scope });
+};
+
+const clearLyricsCache = (): Promise<void> => {
+    return ipcRenderer.invoke('lyric-clear-cache');
 };
 
 const searchRemoteLyrics = (
     params: LyricSearchQuery,
+    sources: LyricSource[],
 ): Promise<Record<LyricSource, InternetProviderLyricSearchResponse[]>> => {
-    const result = ipcRenderer.invoke('lyric-search', params);
-    return result;
+    return ipcRenderer.invoke('lyric-search', { params, sources });
 };
 
-const getRemoteLyricsByRemoteId = (id: LyricGetQuery) => {
-    const result = ipcRenderer.invoke('lyric-by-remote-id', id);
-    return result;
+const getRemoteLyricsByRemoteId = (
+    query: LyricGetQuery,
+    options: LyricsFetchOptions,
+): Promise<null | ProviderLyricsResult> => {
+    return ipcRenderer.invoke('lyric-by-remote-id', { options, query });
 };
 
 const convertFurigana = (text: string): Promise<string> => {
@@ -47,6 +67,8 @@ const convertRomajiTokens = (text: string) => {
 };
 
 export const lyrics = {
+    cascadeWordLevelLyrics,
+    clearLyricsCache,
     convertFurigana,
     convertFuriganaFragment,
     convertRomaji,

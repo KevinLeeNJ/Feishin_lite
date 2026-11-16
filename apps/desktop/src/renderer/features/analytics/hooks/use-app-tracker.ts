@@ -79,11 +79,14 @@ type SettingsProperties = {
     'settings.homeFeature': boolean;
     'settings.language': string;
     'settings.lyrics.enableAutoTranslation': boolean;
-    'settings.lyrics.enableNeteaseTranslation': boolean;
     'settings.lyrics.fetch': boolean;
+    'settings.lyrics.fetchTranslation': boolean;
     'settings.lyrics.sources.genius': boolean;
+    'settings.lyrics.sources.kugou': boolean;
     'settings.lyrics.sources.lrclib': boolean;
     'settings.lyrics.sources.netease': boolean;
+    'settings.lyrics.sources.qqmusic': boolean;
+    'settings.lyrics.sources.simpmusic': boolean;
     'settings.minimizeToTray': boolean;
     'settings.nativeAspectRatio': boolean;
     'settings.playerbarSliderType': PlayerbarSliderType;
@@ -154,18 +157,22 @@ const getSettingsProperties = (): SettingsProperties => {
         'settings.language': settings.general.language,
         // 'settings.lastFM': settings.general.lastFM,
         'settings.lyrics.enableAutoTranslation': ignoreWeb(settings.lyrics.enableAutoTranslation),
-        'settings.lyrics.enableNeteaseTranslation': ignoreWeb(
-            settings.lyrics.enableNeteaseTranslation,
-        ),
         'settings.lyrics.fetch': ignoreWeb(settings.lyrics.fetch),
+        'settings.lyrics.fetchTranslation': ignoreWeb(settings.lyrics.fetchTranslation),
         'settings.lyrics.sources.genius': ignoreWeb(
             settings.lyrics.sources.includes(LyricSource.GENIUS),
+        ),
+        'settings.lyrics.sources.kugou': ignoreWeb(
+            settings.lyrics.sources.includes(LyricSource.KUGOU),
         ),
         'settings.lyrics.sources.lrclib': ignoreWeb(
             settings.lyrics.sources.includes(LyricSource.LRCLIB),
         ),
         'settings.lyrics.sources.netease': ignoreWeb(
             settings.lyrics.sources.includes(LyricSource.NETEASE),
+        ),
+        'settings.lyrics.sources.qqmusic': ignoreWeb(
+            settings.lyrics.sources.includes(LyricSource.QQMUSIC),
         ),
         'settings.lyrics.sources.simpmusic': ignoreWeb(
             settings.lyrics.sources.includes(LyricSource.SIMPMUSIC),

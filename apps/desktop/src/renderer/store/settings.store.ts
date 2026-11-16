@@ -623,12 +623,9 @@ const HotkeysSettingsSchema = z.object({
 const LyricsDisplaySettingsSchema = z.object({
     fontSize: z.number(),
     fontSizeUnsync: z.number(),
-    gap: z.number(),
     gapUnsync: z.number(),
-    opacityNonActive: z.number(),
     paddingLeft: z.number(),
     paddingRight: z.number(),
-    scaleNonActive: z.number(),
 });
 
 const LyricsSettingsSchema = z.object({
@@ -636,10 +633,9 @@ const LyricsSettingsSchema = z.object({
     delayMs: z.number(),
     enableAutoTranslation: z.boolean(),
     enableFurigana: z.boolean().optional(),
-    enableNeteaseTranslation: z.boolean(),
     enableRomaji: z.boolean().optional(),
     fetch: z.boolean(),
-    follow: z.boolean(),
+    fetchTranslation: z.boolean(),
     followScrollAlignment: z.number(),
     lineLeadTimeMs: z.number(),
     preferLocalLyrics: z.boolean(),
@@ -2049,13 +2045,12 @@ const initialState: SettingsState = {
         delayMs: 0,
         enableAutoTranslation: false,
         enableFurigana: false,
-        enableNeteaseTranslation: false,
         enableRomaji: false,
         fetch: true,
-        follow: true,
+        fetchTranslation: false,
         followScrollAlignment: 0,
         lineLeadTimeMs: 800,
-        preferLocalLyrics: true,
+        preferLocalLyrics: false,
         showMatch: false,
         showProvider: false,
         sources: [LyricSource.NETEASE, LyricSource.LRCLIB],
@@ -2067,12 +2062,9 @@ const initialState: SettingsState = {
         default: {
             fontSize: 24,
             fontSizeUnsync: 24,
-            gap: 24,
             gapUnsync: 24,
-            opacityNonActive: 0.2,
             paddingLeft: 0,
             paddingRight: 0,
-            scaleNonActive: 0.95,
         },
     },
     playback: {
@@ -2566,7 +2558,6 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                         const displaySettings = {
                             fontSize: defaultSettings.fontSize || 24,
                             fontSizeUnsync: defaultSettings.fontSizeUnsync || 24,
-                            gap: defaultSettings.gap || 24,
                             gapUnsync: defaultSettings.gapUnsync || 24,
                         };
 
@@ -2933,10 +2924,40 @@ export const useSettingsStore = createWithEqualityFn<SettingsSlice>()(
                     });
                 }
 
+                if (version < 35) {
+                    const legacyLyrics = state.lyrics as typeof state.lyrics & {
+                        enableNeteaseTranslation?: boolean;
+                    };
+                    if (legacyLyrics.fetchTranslation === undefined) {
+                        legacyLyrics.fetchTranslation =
+                            legacyLyrics.enableNeteaseTranslation ?? false;
+                    }
+                    delete legacyLyrics.enableNeteaseTranslation;
+                }
+
+                if (version < 36) {
+                    // AMLL has no auto-follow toggle, synced line gap, or
+                    // non-active opacity/scale controls; drop the dead settings.
+                    const legacyLyrics = state.lyrics as typeof state.lyrics & {
+                        follow?: boolean;
+                    };
+                    delete legacyLyrics.follow;
+                    for (const displaySettings of Object.values(state.lyricsDisplay)) {
+                        const legacyDisplay = displaySettings as typeof displaySettings & {
+                            gap?: number;
+                            opacityNonActive?: number;
+                            scaleNonActive?: number;
+                        };
+                        delete legacyDisplay.gap;
+                        delete legacyDisplay.opacityNonActive;
+                        delete legacyDisplay.scaleNonActive;
+                    }
+                }
+
                 return persistedState;
             },
             name: 'store_settings',
-            version: 34,
+            version: 36,
         },
     ),
 );

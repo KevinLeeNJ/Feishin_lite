@@ -427,7 +427,6 @@ const ENV_SETTING_SPECS: EnvSettingSpec[] = [
     { key: 'FS_DISCORD_SHOW_SERVER_IMAGE', path: ['discord', 'showServerImage'], type: 'bool' },
     { key: 'FS_DISCORD_SHOW_STATE_ICON', path: ['discord', 'showStateIcon'], type: 'bool' },
     { key: 'FS_LYRICS_FETCH', path: ['lyrics', 'fetch'], type: 'bool' },
-    { key: 'FS_LYRICS_FOLLOW', path: ['lyrics', 'follow'], type: 'bool' },
     { key: 'FS_LYRICS_DELAY_MS', path: ['lyrics', 'delayMs'], type: 'num' },
     { key: 'FS_LYRICS_LINE_LEAD_TIME_MS', path: ['lyrics', 'lineLeadTimeMs'], type: 'num' },
     {

@@ -13,6 +13,7 @@ import { ConfirmModal } from '/@/shared/components/modal/modal';
 import { toast } from '/@/shared/components/toast/toast';
 
 const browser = isElectron() ? window.api.browser : null;
+const lyricsApi = isElectron() ? window.api.lyrics : null;
 
 export const CacheSettings = memo(() => {
     const [isClearing, setIsClearing] = useState(false);
@@ -26,8 +27,15 @@ export const CacheSettings = memo(() => {
             try {
                 queryClient.clear();
 
-                if (full && browser) {
-                    await browser.clearCache();
+                if (full) {
+                    // Hard clear also resets the persistent lyrics cache (and its cascade failure
+                    // counts) so songs retry word-level matching. Soft clear leaves lyrics intact.
+                    if (lyricsApi) {
+                        await lyricsApi.clearLyricsCache();
+                    }
+                    if (browser) {
+                        await browser.clearCache();
+                    }
                 }
 
                 toast.success({

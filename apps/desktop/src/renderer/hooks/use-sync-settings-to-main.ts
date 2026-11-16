@@ -97,10 +97,6 @@ export const useSyncSettingsToMain = () => {
                     rendererValue: settings.hotkeys.globalMediaHotkeys,
                 },
                 {
-                    mainStoreKey: 'enableNeteaseTranslation',
-                    rendererValue: settings.lyrics.enableNeteaseTranslation,
-                },
-                {
                     mainStoreKey: 'local_font_path',
                     rendererValue: settings.font.custom,
                 },

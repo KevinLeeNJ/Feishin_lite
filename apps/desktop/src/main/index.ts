@@ -44,6 +44,9 @@ import {
 } from '/@/main/utils/window-bounds';
 import { PlayerRepeat, PlayerStatus, PlayerType, TitleTheme } from '/@/shared/types/types';
 
+// Stub: this fork's own release feed is not configured yet. Fill in the endpoint
+// (alpha) and owner/repo (GitHub) when the project has its own releases; auto-update
+// stays disabled until then (see disableAutoUpdates in ./env).
 const ALPHA_UPDATER_CONFIG: {
     bucket: string;
     channel: string;
@@ -52,14 +55,14 @@ const ALPHA_UPDATER_CONFIG: {
 } = {
     bucket: '',
     channel: 'alpha',
-    endpoint: 'https://feishin-nightly-bucket.jeffvli.org',
+    endpoint: '',
     provider: 's3',
 };
 
 const GITHUB_UPDATER_CONFIG = {
-    owner: 'jeffvli',
+    owner: '',
     provider: 'github' as const,
-    repo: 'feishin',
+    repo: '',
 };
 
 type UpdaterInstance = AppImageUpdater | MacUpdater | NsisUpdater | typeof autoUpdater;
@@ -1203,7 +1206,7 @@ if (!singleInstance) {
                     responseHeaders: {
                         ...details.responseHeaders,
                         'Content-Security-Policy': [
-                            "script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' https://umami.jeffvli.org; style-src 'self' 'unsafe-inline'; media-src 'self' http: https: data: blob:; img-src 'self' http: https: data: blob:; connect-src 'self' http: https: ws: wss:; default-src 'self';",
+                            "script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' http: https: data: blob:; img-src 'self' http: https: data: blob:; connect-src 'self' http: https: ws: wss:; default-src 'self';",
                         ],
                     },
                 });
