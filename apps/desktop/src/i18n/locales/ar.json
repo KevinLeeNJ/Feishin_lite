@@ -489,5 +489,9 @@
         "albumArtistDetail": {
             "favoriteSongs": "الأغاني المفضلة"
         }
+    },
+    "setting": {
+        "ignoreTitleTranslation": "تجاهل العنوان المترجم عند المطابقة",
+        "ignoreTitleTranslation_description": "عند فشل المطابقة، أعد المحاولة بعد إزالة العنوان المترجم بين الأقواس في نهاية اسم الأغنية. لا تتم إزالة الأقواس التي تحتوي على أسماء فنانين مشاركين مثل feat."
     }
 }

@@ -778,7 +778,9 @@
         "sidebarPlaylistMode_description": "Nola bistaratzen den erreprodukzio-zerrenda bakoitza alboko barrako zerrendan",
         "equalizerPreset": "Aurrezarpena",
         "equalizerPresetGroupBuiltIn": "Barneratua",
-        "hotkey_playbackNextAlbum": "Hurrengo albuma"
+        "hotkey_playbackNextAlbum": "Hurrengo albuma",
+        "ignoreTitleTranslation": "Baztertu izenburu itzulia parekatzean",
+        "ignoreTitleTranslation_description": "Bat etortzerik aurkitzen ez bada, saiatu berriro amaierako parentesi artean dagoen izenburu itzulia kenduta. feat. artisten aipamenak dituzten parentesiak ez dira inoiz kentzen."
     },
     "form": {
         "addServer": {

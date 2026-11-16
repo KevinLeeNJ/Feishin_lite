@@ -1085,7 +1085,9 @@
         "microtonalPitchControls": "Contrôles de hauteur microtonale",
         "microtonalPitchControls_description": "Ajoute d'autres contrôles de hauteur pour passer d'un demi-ton à un autre",
         "upNextQueue_description": "Jouer ensuite ajoute les titres à une section À suivre après le titre actuel, dans l'odre dans lequel ils sont été ajouté. À suivre reste le suivant lorsque la file d'attente est mélangée ou remplacée. Désactiver pour insérer chaque lecture suivant directement après la chanson actuelle",
-        "upNextQueue": "File d'attente à suivre"
+        "upNextQueue": "File d'attente à suivre",
+        "ignoreTitleTranslation": "Ignorer le titre traduit lors de la correspondance",
+        "ignoreTitleTranslation_description": "Si aucune correspondance n'est trouvée, réessaie sans le titre traduit entre parenthèses à la fin. Les parenthèses contenant des artistes invités (feat.) ne sont jamais supprimées."
     },
     "form": {
         "deletePlaylist": {

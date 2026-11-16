@@ -1436,6 +1436,8 @@ export type LyricsArgs = BaseEndpointArgs & {
 export type LyricsFetchOptions = {
     fetchRomanization: boolean;
     fetchTranslation: boolean;
+    /** Retry a failed match once without a trailing parenthetical translated title. */
+    ignoreTitleTranslation: boolean;
     sources: LyricSource[];
 };
 

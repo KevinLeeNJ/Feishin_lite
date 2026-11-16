@@ -183,7 +183,9 @@
         "windowBarStyle_description": "Izaberite stil trake prozora",
         "font_description": "Postavlja font koji se koristi za aplikaciju",
         "savePlayQueue_description": "Sačuva listu za reprodukciju kada se aplikacija zatvori i obnovi je pri ponovnom otvaranju aplikacije",
-        "useSystemTheme": "Koristi sistemsku temu"
+        "useSystemTheme": "Koristi sistemsku temu",
+        "ignoreTitleTranslation": "Zanemari prevedeni naziv pri podudaranju",
+        "ignoreTitleTranslation_description": "Ako se ne pronađe podudaranje, pokušava se ponovo bez prevedenog naziva u zagradama na kraju naziva pesme. Zagrade sa gostujućim izvođačima (feat.) se nikada ne uklanjaju."
     },
     "action": {
         "editPlaylist": "Izmeni $t(entity.playlist, {\"count\": 1})",

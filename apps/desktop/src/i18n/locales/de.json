@@ -1342,7 +1342,9 @@
         "transcodeSampleRate": "Maximale Abtastrate für die Transkodierung",
         "windowBarTrackinfo": "Titelinformationen im Fenstertitel",
         "windowBarTrackinfo_description": "Titel und Interpret des aktuellen Stücks, die Position in der Warteschlange sowie den Wiedergabestatus (Wiedergabe/Pause) in der Titelleiste des Fensters anzeigen.",
-        "imagePlaceholderPriority_optionThumbhash": "ThumbHash"
+        "imagePlaceholderPriority_optionThumbhash": "ThumbHash",
+        "ignoreTitleTranslation": "Übersetzten Titel beim Abgleich ignorieren",
+        "ignoreTitleTranslation_description": "Wenn keine Übereinstimmung gefunden wird, erneut ohne den übersetzten Titel in Klammern am Ende des Titels suchen. Klammern mit Gastinterpreten (feat.) werden nie entfernt."
     },
     "dragDropZone": {
         "error_oneFileOnly": "Bitte wähle nur 1 Datei",

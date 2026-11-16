@@ -631,7 +631,9 @@
         "autoDJ": "Auto DJ",
         "autoDJ_itemCount": "Kohteiden määrä",
         "autoDJ_itemCount_description": "Jonoon lisättäväksi yritettyjen kohteiden määrä, kun auto DJ on käytössä",
-        "autoDJ_timing": "Ajastus"
+        "autoDJ_timing": "Ajastus",
+        "ignoreTitleTranslation": "Ohita käännetty nimi haussa",
+        "ignoreTitleTranslation_description": "Jos vastaavuutta ei löydy, yritetään uudelleen ilman kappaleen nimen lopussa sulkeissa olevaa käännettyä nimeä. Vierailijoiden nimiä (feat.) sisältäviä sulkeita ei poisteta."
     },
     "page": {
         "itemDetail": {

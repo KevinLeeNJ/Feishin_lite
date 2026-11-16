@@ -126,6 +126,22 @@ export const LyricSettings = memo(() => {
         },
         {
             control: (
+                <Switch
+                    aria-label="Ignore translated title when matching"
+                    defaultChecked={settings.ignoreTitleTranslation}
+                    onChange={(e) =>
+                        updateSetting({ ignoreTitleTranslation: e.currentTarget.checked })
+                    }
+                />
+            ),
+            description: t('setting.ignoreTitleTranslation', {
+                context: 'description',
+            }),
+            isHidden: !isElectron(),
+            title: t('setting.ignoreTitleTranslation'),
+        },
+        {
+            control: (
                 <NumberInput
                     defaultValue={settings.delayMs}
                     onBlur={(e) => {

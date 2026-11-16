@@ -15,5 +15,9 @@
     },
     "filter": {
         "biography": "Biografie"
+    },
+    "setting": {
+        "ignoreTitleTranslation": "Ignoră titlul tradus la potrivire",
+        "ignoreTitleTranslation_description": "Dacă nu se găsește nicio potrivire, încearcă din nou fără titlul tradus dintre paranteze de la sfârșit. Parantezele cu artiști invitați (feat.) nu sunt niciodată eliminate."
     }
 }

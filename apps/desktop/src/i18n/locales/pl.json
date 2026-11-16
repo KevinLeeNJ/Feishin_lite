@@ -1284,7 +1284,9 @@
         "imagePlaceholderPriority_optionBlurhash": "BlurHash",
         "imagePlaceholderPriority_optionThumbhash": "ThumbHash",
         "upNextQueue_description": "Odtwarzaj następnie dodaje piosenki do sekcji Następne po aktualnej piosence, w kolejności w której zostały dodane. Następne zostaje po wymieszaniu kolejki lub jej zamianie. Wyłącz aby, dodawać Odtwarzaj następnie prosto po aktualnej piosence",
-        "upNextQueue": "Kolejka następnych"
+        "upNextQueue": "Kolejka następnych",
+        "ignoreTitleTranslation": "Ignoruj przetłumaczony tytuł podczas dopasowywania",
+        "ignoreTitleTranslation_description": "Jeśli nie znaleziono dopasowania, spróbuj ponownie bez przetłumaczonego tytułu w nawiasach na końcu nazwy utworu. Nawiasy z gościnnymi wykonawcami (feat.) nie są usuwane."
     },
     "table": {
         "config": {

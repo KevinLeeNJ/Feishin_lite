@@ -1163,7 +1163,9 @@
         "fullscreenAutoOpenTimeout_description": "Opent automatisch de fullscreen-speler na dit aantal minuten inactiviteit terwijl er een nummer wordt afgespeeld. Stel in op 0 om uit te schakelen.",
         "fullscreenAutoOpenTimeout": "Time-out voor automatisch openen van fullscreen-speler (minuten)",
         "sidebarImageEnabled": "Albumhoes vergroten",
-        "sidebarImageEnabled_description": "Toon een knop op de albumhoes van de spelerbalk om deze uit te vouwen naar de zijbalk. Als je deze optie uitschakelt, wordt de knop verborgen en wordt de albumhoes ingeklapt als deze momenteel is uitgevouwen"
+        "sidebarImageEnabled_description": "Toon een knop op de albumhoes van de spelerbalk om deze uit te vouwen naar de zijbalk. Als je deze optie uitschakelt, wordt de knop verborgen en wordt de albumhoes ingeklapt als deze momenteel is uitgevouwen",
+        "ignoreTitleTranslation": "Vertaalde titel negeren bij matchen",
+        "ignoreTitleTranslation_description": "Als er geen overeenkomst wordt gevonden, wordt opnieuw geprobeerd zonder de vertaalde titel tussen haakjes aan het einde van de titel. Haakjes met gastartiesten (feat.) worden nooit verwijderd."
     },
     "form": {
         "addServer": {

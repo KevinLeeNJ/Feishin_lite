@@ -1297,7 +1297,9 @@
         "microtonalPitchControls": "Mikrotonala tonhöjdskontroller",
         "microtonalPitchControls_description": "Lägg till fler tonhöjdskontroller för att ställa in toner mellan halvtonsstegen",
         "sidebarImageEnabled": "Knapp för att förstora albumomslaget",
-        "sidebarImageEnabled_description": "Visa en knapp på albumomslaget i spelarfältet för att förstora det i sidofältet. Om detta inaktiveras döljs knappen och det förstorade omslaget fälls ihop"
+        "sidebarImageEnabled_description": "Visa en knapp på albumomslaget i spelarfältet för att förstora det i sidofältet. Om detta inaktiveras döljs knappen och det förstorade omslaget fälls ihop",
+        "ignoreTitleTranslation": "Ignorera översatt titel vid matchning",
+        "ignoreTitleTranslation_description": "Om ingen träff hittas görs ett nytt försök utan den översatta titeln inom parentes i slutet av låttiteln. Parenteser med gästartister (feat.) tas aldrig bort."
     },
     "visualizer": {
         "options": {

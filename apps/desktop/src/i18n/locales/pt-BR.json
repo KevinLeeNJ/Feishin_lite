@@ -514,7 +514,9 @@
         "windowBarStyle": "Estilo de barra da janela",
         "windowBarStyle_description": "Selecione o estilo da barra da janela",
         "zoom": "Porcentagem de zoom",
-        "zoom_description": "Define a porcentagem de zoom para o aplicativo"
+        "zoom_description": "Define a porcentagem de zoom para o aplicativo",
+        "ignoreTitleTranslation": "Ignorar título traduzido ao corresponder",
+        "ignoreTitleTranslation_description": "Se nenhuma correspondência for encontrada, tenta novamente sem o título traduzido entre parênteses no final. Parênteses com artistas convidados (feat.) nunca são removidos."
     },
     "table": {
         "config": {

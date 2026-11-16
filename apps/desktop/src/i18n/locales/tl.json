@@ -10,5 +10,9 @@
         "selectAll": "Piliin lahat",
         "deselectAll": "Huwag piliin lahat",
         "downloadStarted": "Nagsimulang mag-dowload ng {{count}} (mga) aytem"
+    },
+    "setting": {
+        "ignoreTitleTranslation": "Huwag pansinin ang isinaling pamagat kapag nagtutugma",
+        "ignoreTitleTranslation_description": "Kung walang mahanap na tugma, subukan muli nang walang isinaling pamagat sa panaklong sa dulo ng pamagat ng kanta. Hindi tinatanggal ang mga panaklong may pangalan ng guest artist (feat.)."
     }
 }

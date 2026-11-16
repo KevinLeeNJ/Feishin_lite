@@ -688,6 +688,8 @@
         "musicbrainz_description": "在擁有 MusicBrainz ID 的藝人/專輯頁面上顯示 MusicBrainz 的連結",
         "fetchTranslation": "取得翻譯歌詞",
         "fetchTranslation_description": "啟用後，從所有已啟用的供應方取得並顯示翻譯歌詞（如果存在）",
+        "ignoreTitleTranslation": "忽略翻譯名匹配",
+        "ignoreTitleTranslation_description": "匹配不到時，去掉曲名末尾括號內的翻譯名再匹配一次；括號內為 feat. 等歌手署名時不處理",
         "passwordStore": "密碼/秘密儲存",
         "passwordStore_description": "使用什麼密碼/秘密儲存。如果您在儲存密碼時遇到問題，請變更此項目",
         "playButtonBehavior_optionPlayShuffled": "$t(player.shuffle)",

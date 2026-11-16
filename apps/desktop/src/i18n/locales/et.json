@@ -1305,7 +1305,9 @@
         "sidebarImageEnabled": "Plaadiümbrise suurendamise nupp",
         "sidebarImageEnabled_description": "Kuvab pleieririba plaadiümbrisel nuppu selle laiendamiseks külgribale. Funktsiooni väljalülitamisel peidetakse nupp ning ahendatakse kaanepilt, kui see oli varem laiendatud",
         "scrobbleMinimumMode_optionSeconds": "Sekundit",
-        "scrobbleMinimumMode_optionPercentage": "Protsent"
+        "scrobbleMinimumMode_optionPercentage": "Protsent",
+        "ignoreTitleTranslation": "Eira pealkirja tõlget sobitamisel",
+        "ignoreTitleTranslation_description": "Kui vastet ei leita, proovitakse uuesti ilma pealkirja lõpus sulgudes oleva tõlgitud pealkirjata. Külaesinejate nimesid (feat.) sisaldavaid sulge ei eemaldata."
     },
     "datetime": {
         "minuteShort": "m",

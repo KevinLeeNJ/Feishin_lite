@@ -265,6 +265,8 @@
         "font": "字体",
         "fetchTranslation": "获取翻译歌词",
         "fetchTranslation_description": "启用后，从所有已启用的供应方获取并显示翻译歌词（如果存在）",
+        "ignoreTitleTranslation": "忽略翻译名匹配",
+        "ignoreTitleTranslation_description": "匹配不到时，去掉曲名末尾括号内的翻译名再匹配一次；括号内为 feat. 等歌手署名时不处理",
         "crossfadeDuration_description": "设置淡入淡出持续时间",
         "audioDevice": "音频设备",
         "enableRemote": "启用远程控制服务器",

@@ -696,7 +696,9 @@
         "showQueueInSidebar": "Mostra la coda nella barra laterale player",
         "showQueueInSidebar_description": "Aggiunge un pannello alla barra laterale del player che mostra la coda di riproduzione",
         "showFavorites": "Mostra i preferiti",
-        "showFavorites_description": "Controlla se la funzione dei preferiti (cuore) viene mostrata nell'interfaccia"
+        "showFavorites_description": "Controlla se la funzione dei preferiti (cuore) viene mostrata nell'interfaccia",
+        "ignoreTitleTranslation": "Ignora il titolo tradotto durante la ricerca",
+        "ignoreTitleTranslation_description": "Se non viene trovata una corrispondenza, riprova senza il titolo tradotto tra parentesi alla fine. Le parentesi con artisti ospiti (feat.) non vengono mai rimosse."
     },
     "error": {
         "remotePortWarning": "Riavvia il server per applicare la nuova porta",

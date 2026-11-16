@@ -543,7 +543,9 @@
         "imagePlaceholderPriority_optionThumbhash": "ThumbHash",
         "transcodeNote": "トランスコードはサーバー側で行われ、次の曲から適用されます",
         "transcodeSampleRate_description": "トランスコードされたオーディオの最大サンプリング レート（Hz）。例：192000。ソースのレートを維持する場合は空欄のままにしてください。Jellyfin のみ対応しています",
-        "transcodeSampleRate": "トランスコードする最大サンプリング レート"
+        "transcodeSampleRate": "トランスコードする最大サンプリング レート",
+        "ignoreTitleTranslation": "照合時に翻訳タイトルを無視",
+        "ignoreTitleTranslation_description": "一致する歌詞が見つからない場合、曲名末尾の括弧内の翻訳タイトルを除いてもう一度照合します。feat. などの参加アーティスト名を含む括弧は削除しません。"
     },
     "action": {
         "editPlaylist": "$t(entity.playlist, {\"count\": 1})を編集",

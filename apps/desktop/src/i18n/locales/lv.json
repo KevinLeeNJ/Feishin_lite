@@ -1152,7 +1152,9 @@
         "queryBuilderCustomFields": "Pielāgoti lauki",
         "queryBuilderCustomFields_description": "Pievienojiet pielāgotus laukus, lai tos izmantotu vaicājumu veidotājos",
         "microtonalPitchControls": "Mikrotonālas skaņas regulēšanas elementi",
-        "microtonalPitchControls_description": "Pievienojiet vairāk toņu regulēšanas elementu, lai varētu pārslēgties starp pusotonīm"
+        "microtonalPitchControls_description": "Pievienojiet vairāk toņu regulēšanas elementu, lai varētu pārslēgties starp pusotonīm",
+        "ignoreTitleTranslation": "Ignorēt tulkoto nosaukumu saskaņošanā",
+        "ignoreTitleTranslation_description": "Ja atbilstība nav atrasta, mēģina vēlreiz bez dziesmas nosaukuma beigās iekavās esošā tulkotā nosaukuma. Iekavas ar viesmākslinieku vārdiem (feat.) netiek noņemtas."
     },
     "table": {
         "column": {

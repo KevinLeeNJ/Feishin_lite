@@ -734,7 +734,9 @@
         "sidebarPlaylistList": "Playlist bočnej lišty",
         "sidebarPlaylistList_description": "Zobraziť alebo skryť playlist na bočnej lište",
         "sidePlayQueueStyle": "Štýl bočnej fronty prehrávania",
-        "sidePlayQueueStyle_description": "Nastaví štýl bočnej fronty prehrávania"
+        "sidePlayQueueStyle_description": "Nastaví štýl bočnej fronty prehrávania",
+        "ignoreTitleTranslation": "Ignorovať preložený názov pri párovaní",
+        "ignoreTitleTranslation_description": "Ak sa nenájde zhoda, skúsi sa to znova bez preloženého názvu v zátvorkách na konci názvu skladby. Zátvorky s hosťujúcimi interpretmi (feat.) sa neodstraňujú."
     },
     "table": {
         "column": {

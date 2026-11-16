@@ -711,7 +711,9 @@
         "transcode": "Ativar transcodificação",
         "translationTargetLanguage": "Idioma de destino para tradução",
         "useSystemTheme": "Usar tema do sistema",
-        "queryBuilderCustomFields_inputLabel": "Etiqueta"
+        "queryBuilderCustomFields_inputLabel": "Etiqueta",
+        "ignoreTitleTranslation": "Ignorar o título traduzido ao corresponder",
+        "ignoreTitleTranslation_description": "Se não for encontrada nenhuma correspondência, tenta novamente sem o título traduzido entre parênteses no final. Os parênteses com artistas convidados (feat.) nunca são removidos."
     },
     "table": {
         "column": {

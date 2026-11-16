@@ -634,6 +634,8 @@
         "lyricOffset": "Zamik besedila (ms)",
         "lyricOffset_description": "Zamakni besedilo za določeno število milisekund",
         "minimizeToTray": "Minimiziraj v sistemsko vrstico",
-        "minimizeToTray_description": "Minimizirajte aplikacijo v sistemsko vrstico"
+        "minimizeToTray_description": "Minimizirajte aplikacijo v sistemsko vrstico",
+        "ignoreTitleTranslation": "Prezri prevedeni naslov pri ujemanju",
+        "ignoreTitleTranslation_description": "Če se ne najde ujemanje, poskusi znova brez prevedenega naslova v oklepajih na koncu naslova pesmi. Oklepaji z gostujočimi izvajalci (feat.) se nikoli ne odstranijo."
     }
 }

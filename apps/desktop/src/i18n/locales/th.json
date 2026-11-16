@@ -283,5 +283,9 @@
         "secondShort": "ว.",
         "hourShort": "ชม.",
         "dayShort": "ว."
+    },
+    "setting": {
+        "ignoreTitleTranslation": "ไม่สนใจชื่อที่แปลเมื่อจับคู่",
+        "ignoreTitleTranslation_description": "หากไม่พบรายการที่ตรงกัน จะลองใหม่โดยตัดชื่อที่แปลในวงเล็บท้ายชื่อเพลงออก วงเล็บที่มีชื่อศิลปินรับเชิญ (feat.) จะไม่ถูกตัดออก"
     }
 }

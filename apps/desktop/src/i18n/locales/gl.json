@@ -92,5 +92,9 @@
         "forward": "Adiante",
         "home": "Casa",
         "increase": "Aumenta"
+    },
+    "setting": {
+        "ignoreTitleTranslation": "Ignorar o título traducido ao buscar coincidencias",
+        "ignoreTitleTranslation_description": "Se non se atopa ningunha coincidencia, volve probar sen o título traducido entre parénteses ao final. As parénteses con artistas convidados (feat.) nunca se eliminan."
     }
 }

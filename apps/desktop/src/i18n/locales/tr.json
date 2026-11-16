@@ -886,7 +886,9 @@
         "combinedLyricsAndVisualizer": "Şarkı sözleri ve görselleştiriciyi oynatıcı yan panelinde birleştir",
         "sidebarPlaylistFolderSeparator": "Klasör ayırıcı",
         "sidebarPlaylistFolderView_optionSingle": "Tek klasör",
-        "sidebarPlaylistFolderView_optionTree": "Ağaç liste görünümü"
+        "sidebarPlaylistFolderView_optionTree": "Ağaç liste görünümü",
+        "ignoreTitleTranslation": "Eşleştirmede çevrilmiş başlığı yok say",
+        "ignoreTitleTranslation_description": "Eşleşme bulunamazsa, şarkı adının sonundaki parantez içindeki çevrilmiş başlık olmadan yeniden denenir. feat. gibi konuk sanatçı adları içeren parantezler kaldırılmaz."
     },
     "table": {
         "column": {

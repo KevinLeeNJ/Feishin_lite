@@ -1099,6 +1099,8 @@
         "nativeSpotify": "Use Spotify app",
         "fetchTranslation_description": "When enabled, fetches and displays translated lyrics from all enabled providers if available",
         "fetchTranslation": "Fetch translated lyrics",
+        "ignoreTitleTranslation_description": "When a match fails, retry without the translated title in trailing parentheses. Parentheses naming featured artists are never stripped",
+        "ignoreTitleTranslation": "Ignore translated title when matching",
         "notify": "Enable song notifications",
         "notify_description": "Show notifications when changing the current song",
         "pathReplace": "File path replacement",

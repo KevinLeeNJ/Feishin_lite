@@ -1141,7 +1141,9 @@
         "imagePlaceholderPriority_optionOff": "Desactivat",
         "imagePlaceholderPriority_optionThumbhash": "ThumbHash",
         "upNextQueue_description": "Reprodueix a continuació afegeix cançons a la secció A continuació després de la cançó actual, en l'ordre en què es van afegir. A continuació es queda següent quan es barreja o se substitueix la cua. Desactiva per inserir cada reproducció directament després de la cançó actual",
-        "upNextQueue": "Cua a continuació"
+        "upNextQueue": "Cua a continuació",
+        "ignoreTitleTranslation": "Ignora el títol traduït en cercar coincidències",
+        "ignoreTitleTranslation_description": "Si no es troba cap coincidència, torna-ho a provar sense el títol traduït entre parèntesis al final. Els parèntesis amb artistes convidats (feat.) no s'eliminen mai."
     },
     "table": {
         "column": {

@@ -1034,7 +1034,9 @@
         "queryBuilderCustomFields_inputTag": "Tag",
         "queryBuilderCustomFields": "Brugerdefinerede felter",
         "queryBuilderCustomFields_description": "Tilføj brugerdefinerede felter til brug i forespørgselsbyggere",
-        "customFontPath_description": "Angiver stien til den brugerdefinerede skrifttype, der skal bruges i programmet"
+        "customFontPath_description": "Angiver stien til den brugerdefinerede skrifttype, der skal bruges i programmet",
+        "ignoreTitleTranslation": "Ignorér oversat titel ved matchning",
+        "ignoreTitleTranslation_description": "Hvis der ikke findes et match, prøves der igen uden den oversatte titel i parentes i slutningen af sangtitlen. Parenteser med gæsteartister (feat.) fjernes ikke."
     },
     "table": {
         "column": {

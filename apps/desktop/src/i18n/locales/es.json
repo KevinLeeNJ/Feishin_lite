@@ -547,7 +547,9 @@
         "imagePlaceholderPriority_optionBlurhash": "BlurHash",
         "imagePlaceholderPriority_optionThumbhash": "ThumbHash",
         "upNextQueue_description": "Reproducir a continuación añade canciones a la sección Próximamente tras la canción actual, en el orden en que fueron añadidas. Próximamente permanece en su lugar cuando se mezcla o se sustituye la cola. Desactivar para insertar cada canción de Reproducir a continuación directamente tras la canción actual",
-        "upNextQueue": "Cola Próximamente"
+        "upNextQueue": "Cola Próximamente",
+        "ignoreTitleTranslation": "Ignorar el título traducido al buscar coincidencias",
+        "ignoreTitleTranslation_description": "Si no se encuentra ninguna coincidencia, se vuelve a intentar sin el título traducido entre paréntesis al final. Los paréntesis con artistas invitados (feat.) nunca se eliminan."
     },
     "action": {
         "editPlaylist": "Editar $t(entity.playlist, {\"count\": 1})",

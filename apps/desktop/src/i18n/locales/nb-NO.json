@@ -654,7 +654,9 @@
         "albumBackgroundBlur_description": "Justerer grad av uskarphet lagt til på album bakgrunnsbilde",
         "audioDevice": "Lydenhet",
         "zoom": "Zoomprosent",
-        "zoom_description": "Angir zoomprosent for applikasjonen"
+        "zoom_description": "Angir zoomprosent for applikasjonen",
+        "ignoreTitleTranslation": "Ignorer oversatt tittel ved matching",
+        "ignoreTitleTranslation_description": "Hvis ingen treff finnes, prøves det på nytt uten den oversatte tittelen i parentes på slutten av sangtittelen. Parenteser med gjesteartister (feat.) fjernes aldri."
     },
     "table": {
         "config": {

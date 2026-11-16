@@ -1234,7 +1234,9 @@
         "transcodeSampleRate_description": "Laju sampel maksimum dalam Hz untuk audio yang ditranskode, misalnya 192000. Biarkan kosong untuk mempertahankan laju sumber. Khusus Jellyfin",
         "transcodeSampleRate": "Laju sampel maksimum untuk transcoding",
         "sidebarImageEnabled": "Tombol perluas gambar album",
-        "sidebarImageEnabled_description": "Tampilkan tombol pada gambar album di bilah pemutar untuk memperluasnya ke panel samping. Menonaktifkan opsi ini juga menyembunyikan tombol dan menutup gambar album jika sedang diperluas"
+        "sidebarImageEnabled_description": "Tampilkan tombol pada gambar album di bilah pemutar untuk memperluasnya ke panel samping. Menonaktifkan opsi ini juga menyembunyikan tombol dan menutup gambar album jika sedang diperluas",
+        "ignoreTitleTranslation": "Abaikan judul terjemahan saat mencocokkan",
+        "ignoreTitleTranslation_description": "Jika tidak ada kecocokan, coba lagi tanpa judul terjemahan dalam tanda kurung di akhir judul lagu. Tanda kurung yang berisi artis tamu (feat.) tidak pernah dihapus."
     },
     "table": {
         "column": {

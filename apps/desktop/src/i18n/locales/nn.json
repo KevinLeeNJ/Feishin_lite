@@ -230,5 +230,9 @@
         "networkError": "Ein nettverksfeil skjedde",
         "noNetwork": "Sørvar utilgjengeleg",
         "noNetworkDescription": "Kunne ikkje kople til denne sørvaren"
+    },
+    "setting": {
+        "ignoreTitleTranslation": "Ignorer omsett tittel ved matching",
+        "ignoreTitleTranslation_description": "Viss ingen treff blir funne, blir det prøvd på nytt utan den omsette tittelen i parentes på slutten av songtittelen. Parentesar med gjesteartistar (feat.) blir aldri fjerna."
     }
 }

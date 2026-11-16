@@ -1002,7 +1002,9 @@
         "queryBuilderCustomFields_inputLabel": "சிட்டை",
         "queryBuilderCustomFields_inputTag": "குறிச்சொல்",
         "queryBuilderCustomFields": "விருப்ப புலங்கள்",
-        "queryBuilderCustomFields_description": "வினவல் பில்டர்களில் பயன்படுத்த தனிப்பயன் புலங்களைச் சேர்க்கவும்"
+        "queryBuilderCustomFields_description": "வினவல் பில்டர்களில் பயன்படுத்த தனிப்பயன் புலங்களைச் சேர்க்கவும்",
+        "ignoreTitleTranslation": "பொருந்தும்போது மொழிபெயர்க்கப்பட்ட தலைப்பைப் புறக்கணி",
+        "ignoreTitleTranslation_description": "பொருத்தம் கிடைக்கவில்லை என்றால், பாடல் பெயரின் இறுதியில் அடைப்புக்குறிக்குள் உள்ள மொழிபெயர்க்கப்பட்ட தலைப்பை நீக்கி மீண்டும் முயற்சிக்கும். feat. கலைஞர்களின் பெயர்களைக் கொண்ட அடைப்புக்குறிகள் அகற்றப்படாது."
     },
     "table": {
         "config": {

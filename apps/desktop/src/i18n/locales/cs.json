@@ -547,7 +547,9 @@
         "transcodeSampleRate_description": "Maximální vzorkovací frekvence překódovaného zvuku v Hz, např. 192000. Ponechte prázdné pro zachování zdrojové frekvence. Platí pouze pro Jellyfin",
         "transcodeSampleRate": "Maximální vzorkovací frekvence k překódování",
         "upNextQueue_description": "Přehrát jako další přidá skladbu do sekce Další na řadě po aktuální skladbě, v pořadí, ve kterém byly přidány. Další na řadě zůstane další, když je fronta zamíchána nebo nahrazena. Zakažte pro vložení každého Přehrát jako další po aktuální skladbě",
-        "upNextQueue": "Fronta dalších na řadě"
+        "upNextQueue": "Fronta dalších na řadě",
+        "ignoreTitleTranslation": "Ignorovat přeložený název při párování",
+        "ignoreTitleTranslation_description": "Pokud se nenajde shoda, zkuste to znovu bez přeloženého názvu v závorkách na konci názvu skladby. Závorky s hostujícími interprety (feat.) se neodstraňují."
     },
     "action": {
         "editPlaylist": "Upravit $t(entity.playlist, {\"count\": 1})",

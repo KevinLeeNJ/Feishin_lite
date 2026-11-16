@@ -946,7 +946,9 @@
         "audioFadeOnStatusChange": "Audio behúzás állapotváltozáskor",
         "audioFadeOnStatusChange_description": "Lehetővé teszi a lehúzást és a behúzást, amikor a lejátszás/szünet állapot megváltozik",
         "useThemeAccentColor": "Használd a téma kiemelő színét",
-        "useThemeAccentColor_description": "A kiválasztott témában meghatározott alapszínt használja az egyéni kiemelő szín helyett"
+        "useThemeAccentColor_description": "A kiválasztott témában meghatározott alapszínt használja az egyéni kiemelő szín helyett",
+        "ignoreTitleTranslation": "A lefordított cím figyelmen kívül hagyása párosításkor",
+        "ignoreTitleTranslation_description": "Ha nincs találat, újrapróbálja a cím végén zárójelben lévő fordított cím nélkül. A közreműködő előadókat (feat.) tartalmazó zárójelek nem kerülnek eltávolításra."
     },
     "table": {
         "config": {

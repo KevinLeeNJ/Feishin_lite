@@ -225,10 +225,12 @@ export async function fetchLocalLyrics(params: {
 }
 
 const readFetchOptions = (): LyricsFetchOptions => {
-    const { enableRomaji, fetchTranslation, sources } = useSettingsStore.getState().lyrics;
+    const { enableRomaji, fetchTranslation, ignoreTitleTranslation, sources } =
+        useSettingsStore.getState().lyrics;
     return {
         fetchRomanization: !!enableRomaji,
         fetchTranslation,
+        ignoreTitleTranslation,
         sources,
     };
 };

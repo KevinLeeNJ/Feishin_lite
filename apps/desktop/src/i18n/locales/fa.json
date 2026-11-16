@@ -169,7 +169,9 @@
         "volumeWheelStep": "گام چرخ حجم صدا",
         "webAudio": "استفاده از صدای وب",
         "windowBarStyle": "سبک نوار پنجره",
-        "crossfadeDuration_description": "زمان افکت crossfade را مشخص می‌کند"
+        "crossfadeDuration_description": "زمان افکت crossfade را مشخص می‌کند",
+        "ignoreTitleTranslation": "نادیده گرفتن عنوان ترجمه‌شده هنگام تطبیق",
+        "ignoreTitleTranslation_description": "اگر تطبیقی پیدا نشد، یک بار دیگر بدون عنوان ترجمه‌شده داخل پرانتز انتهای نام آهنگ تلاش کنید. پرانتزهایی که نام هنرمندان مهمان (feat.) را دارند حذف نمی‌شوند."
     },
     "common": {
         "backward": "به عقب",

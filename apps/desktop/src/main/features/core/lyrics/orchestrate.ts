@@ -162,7 +162,7 @@ export const getRemoteLyrics = async (
 
     // Retry once without a trailing parenthetical translation: the library title stays stable
     // across plays, so a title that only matches with its subtitle removed needs this pass.
-    if (!isMatch(ranked[0])) {
+    if (!isMatch(ranked[0]) && options.ignoreTitleTranslation) {
         const strippedName = stripTrailingTranslation(song.name);
         if (strippedName) {
             const retryRanked = await searchAndRank(strippedName);
