@@ -13,7 +13,9 @@ import { translateLyrics } from '/@/renderer/features/lyrics/api/lyric-translate
 import {
     bumpLyricsGeneration,
     computeSelectedFromResult,
+    fetchRemoteLyricsById,
     getDisplayOffset,
+    hasLocalLyrics,
     lyricsQueries,
     type LyricsQueryResult,
 } from '/@/renderer/features/lyrics/api/lyrics-api';
@@ -47,7 +49,12 @@ import { Group } from '/@/shared/components/group/group';
 import { Spinner } from '/@/shared/components/spinner/spinner';
 import { Text } from '/@/shared/components/text/text';
 import { useLocalStorage } from '/@/shared/hooks/use-local-storage';
-import { LyricsOverride, SynchronizedLyrics } from '/@/shared/types/domain-types';
+import {
+    LyricSource,
+    LyricsOverride,
+    ProviderLyricsResult,
+    SynchronizedLyrics,
+} from '/@/shared/types/domain-types';
 
 type LyricsProps = {
     fadeOutNoLyricsMessage?: boolean;
@@ -65,6 +72,7 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
         enableAutoTranslation,
         enableFurigana,
         enableRomaji,
+        fetchTranslation: fetchProviderTranslation,
         lineLeadTimeMs,
         preferLocalLyrics,
         translationApiKey,
@@ -153,8 +161,20 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
         if (data != null) setIndexState(data.selectedStructuredIndex);
     }, [data]);
 
-    const { selected: lyrics, selectedSynced: synced } = useMemo(() => {
-        if (!data) return { selected: null, selectedSynced: false };
+    const {
+        selected: lyrics,
+        selectedRomanization,
+        selectedSynced: synced,
+        selectedTranslation,
+    } = useMemo(() => {
+        if (!data) {
+            return {
+                selected: null,
+                selectedRomanization: null,
+                selectedSynced: false,
+                selectedTranslation: null,
+            };
+        }
         return computeSelectedFromResult(data, preferLocalLyrics, indexToUse);
     }, [data, indexToUse, preferLocalLyrics]);
 
@@ -226,8 +246,10 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
         );
 
         if (layer?.synced) return layer.lyrics;
-        return data?.selectedRomanization ?? null;
-    }, [visibleOverlayLayers, data?.selectedRomanization]);
+        // The provider romanization follows the global toggle instead of staying
+        // visible just because it arrived with an earlier fetch.
+        return enableRomaji ? selectedRomanization : null;
+    }, [enableRomaji, selectedRomanization, visibleOverlayLayers]);
 
     const translationLyricsOverlay = useMemo(() => {
         const layer = visibleOverlayLayers.find(
@@ -235,8 +257,82 @@ export const Lyrics = ({ fadeOutNoLyricsMessage = true, settingsKey = 'default' 
         );
 
         if (layer?.synced) return layer.lyrics;
-        return data?.selectedTranslation ?? null;
-    }, [visibleOverlayLayers, data?.selectedTranslation]);
+        return fetchProviderTranslation ? selectedTranslation : null;
+    }, [fetchProviderTranslation, selectedTranslation, visibleOverlayLayers]);
+
+    // Enabling romaji/translation mid-song must not wait for a replay: the provider
+    // result was fetched with the old flags, so refetch the same candidate with the
+    // current options and merge the newly requested overlays into the query cache.
+    const overlayAttemptRef = useRef('');
+    useEffect(() => {
+        if (!lyricsKey || isLyricsDisabled || (!enableRomaji && !fetchProviderTranslation)) {
+            return;
+        }
+        // Prefer-local mode shows the server copy, so its provider overlays never appear.
+        if (
+            preferLocalLyrics &&
+            !data?.overrideSelection &&
+            data?.local &&
+            hasLocalLyrics(data.local)
+        ) {
+            return;
+        }
+
+        const provider = data?.overrideSelection ? data?.overrideData : data?.remoteAuto;
+        if (!provider) return;
+
+        const remoteId = provider.lyrics.remoteId;
+        if (!remoteId) return;
+
+        const needRomanization = enableRomaji && !provider.romanization;
+        const needTranslation = fetchProviderTranslation && !provider.translation;
+        if (!needRomanization && !needTranslation) return;
+
+        // One attempt per song/flag combination: a provider without the overlay must
+        // not turn this into an endless refetch loop.
+        const attemptKey = `${JSON.stringify(lyricsKey)}:${remoteId}:${
+            needRomanization ? 'r' : ''
+        }${needTranslation ? 't' : ''}`;
+        if (overlayAttemptRef.current === attemptKey) return;
+        overlayAttemptRef.current = attemptKey;
+
+        let cancelled = false;
+        void fetchRemoteLyricsById({
+            remoteSongId: remoteId,
+            remoteSource: provider.lyrics.source as LyricSource,
+        }).then((result) => {
+            if (cancelled || !result) return;
+            queryClient.setQueryData<LyricsQueryResult>(lyricsKey, (prev) => {
+                if (!prev) return prev;
+                const mergeOverlays = (base: ProviderLyricsResult): ProviderLyricsResult => ({
+                    ...base,
+                    romanization: base.romanization ?? result.romanization,
+                    translation: base.translation ?? result.translation,
+                });
+                if (prev.overrideSelection && prev.overrideData) {
+                    return { ...prev, overrideData: mergeOverlays(prev.overrideData) };
+                }
+                if (prev.remoteAuto) {
+                    return { ...prev, remoteAuto: mergeOverlays(prev.remoteAuto) };
+                }
+                return prev;
+            });
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [
+        data?.local,
+        data?.overrideData,
+        data?.overrideSelection,
+        data?.remoteAuto,
+        enableRomaji,
+        fetchProviderTranslation,
+        isLyricsDisabled,
+        lyricsKey,
+        preferLocalLyrics,
+    ]);
 
     const selectedAgents = useMemo(() => {
         if (!lyrics || !('synced' in lyrics) || !lyrics.synced) {

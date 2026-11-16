@@ -3,6 +3,7 @@ import md5 from 'md5';
 
 import {
     InternetProviderLyricSearchResponse,
+    LyricsFetchOptions,
     LyricsScope,
     ProviderLyricsResult,
 } from '/@/shared/types/domain-types';
@@ -16,6 +17,8 @@ export interface LyricsCacheEntry {
     /** Ranked cascade candidates kept so a non-word-level result can retry without re-searching. */
     fallbacks?: InternetProviderLyricSearchResponse[];
     fetchedAt: number;
+    /** Overlay flags used when stored; absent on legacy entries (treated as not fetched). */
+    overlays?: { romanization: boolean; translation: boolean };
     result: null | ProviderLyricsResult;
 }
 
@@ -76,6 +79,7 @@ export const writeCache = (
     scope: LyricsScope,
     result: ProviderLyricsResult,
     fallbacks: InternetProviderLyricSearchResponse[] = [],
+    options?: LyricsFetchOptions,
 ): void => {
     const now = Date.now();
     getCacheStore().set(cacheKey(scope), {
@@ -83,6 +87,10 @@ export const writeCache = (
         expiresAt: now + POSITIVE_TTL_MS,
         fallbacks,
         fetchedAt: now,
+        overlays: {
+            romanization: !!options?.fetchRomanization,
+            translation: !!options?.fetchTranslation,
+        },
         result,
     });
     evictOverflow();

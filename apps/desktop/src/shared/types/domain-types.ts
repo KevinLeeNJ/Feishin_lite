@@ -1950,7 +1950,8 @@ export type JukeboxControlResponse = null | {
 export type LyricGetQuery = {
     remoteSongId: string;
     remoteSource: LyricSource;
-    song: Song;
+    /** Optional metadata context; providers only need the remote id to fetch. */
+    song?: Song;
 };
 
 export type LyricSearchQuery = {

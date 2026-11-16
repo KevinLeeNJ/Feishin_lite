@@ -1,6 +1,12 @@
-import { readCache, recordCascadeFailure, writeCache, writeNegativeCache } from './cache';
+import {
+    type LyricsCacheEntry,
+    readCache,
+    recordCascadeFailure,
+    writeCache,
+    writeNegativeCache,
+} from './cache';
 import { getProvider, PROVIDERS } from './providers/registry';
-import { orderSearchResults, selectWordLevelFallbacks } from './shared';
+import { orderSearchResults, selectWordLevelFallbacks, stripTrailingTranslation } from './shared';
 
 import log from '/@/main/logger';
 import {
@@ -81,6 +87,48 @@ const fetchBestMatch = async (
     return result;
 };
 
+/**
+ * A cached result may predate newly enabled overlay toggles. Refetch the same provider
+ * candidate with the current options, merge the missing overlays and persist them so the
+ * next play applies the settings immediately too.
+ */
+const ensureRequestedOverlays = async (
+    scope: LyricsScope,
+    entry: LyricsCacheEntry,
+    options: LyricsFetchOptions,
+): Promise<null | ProviderLyricsResult> => {
+    const cached = entry.result;
+    if (!cached) {
+        return null;
+    }
+
+    const stored = entry.overlays ?? { romanization: false, translation: false };
+    const needRomanization = options.fetchRomanization && !stored.romanization;
+    const needTranslation = options.fetchTranslation && !stored.translation;
+    if ((!needRomanization && !needTranslation) || !cached.lyrics.remoteId) {
+        return cached;
+    }
+
+    const refreshed = await getRemoteLyricsById(
+        {
+            remoteSongId: cached.lyrics.remoteId,
+            remoteSource: cached.lyrics.source as LyricSource,
+        },
+        options,
+    );
+    if (!refreshed) {
+        return cached;
+    }
+
+    const merged: ProviderLyricsResult = {
+        ...cached,
+        romanization: cached.romanization ?? refreshed.romanization,
+        translation: cached.translation ?? refreshed.translation,
+    };
+    writeCache(scope, merged, entry.fallbacks ?? [], options);
+    return merged;
+};
+
 /** Auto-fetch lyrics for a song, serving the persistent cache before hitting providers. */
 export const getRemoteLyrics = async (
     song: Song,
@@ -95,18 +143,37 @@ export const getRemoteLyrics = async (
         const gaveUp = (cached.cascadeFailures ?? 0) > MAX_CASCADE_FAILURES;
         return {
             fallbacks: !isWordLevel && !gaveUp ? (cached.fallbacks ?? []) : [],
-            result: cached.result,
+            result: await ensureRequestedOverlays(scope, cached, options),
         };
     }
 
     const params = buildSearchParams(song);
-    const ranked = orderSearchResults({
-        params,
-        results: await searchAllSources(params, options.sources),
-    });
+    const searchAndRank = async (name: string) => {
+        const searchParams = { ...params, name };
+        return orderSearchResults({
+            params: searchParams,
+            results: await searchAllSources(searchParams, options.sources),
+        });
+    };
+    const isMatch = (candidate?: InternetProviderLyricSearchResponse) =>
+        !!candidate && (candidate.score ?? 1) <= MATCH_THRESHOLD;
+
+    let ranked = await searchAndRank(song.name);
+
+    // Retry once without a trailing parenthetical translation: the library title stays stable
+    // across plays, so a title that only matches with its subtitle removed needs this pass.
+    if (!isMatch(ranked[0])) {
+        const strippedName = stripTrailingTranslation(song.name);
+        if (strippedName) {
+            const retryRanked = await searchAndRank(strippedName);
+            if (isMatch(retryRanked[0])) {
+                ranked = retryRanked;
+            }
+        }
+    }
 
     const bestMatch = ranked[0];
-    if (!bestMatch || (bestMatch.score ?? 1) > MATCH_THRESHOLD) {
+    if (!isMatch(bestMatch)) {
         writeNegativeCache(scope);
         return { fallbacks: [], result: null };
     }
@@ -120,7 +187,7 @@ export const getRemoteLyrics = async (
                 result.lyrics.timingGranularity === 'word'
                     ? []
                     : selectWordLevelFallbacks({ bestMatch, maxScore: MATCH_THRESHOLD, ranked });
-            writeCache(scope, result, fallbacks);
+            writeCache(scope, result, fallbacks, options);
             return { fallbacks, result };
         }
         writeNegativeCache(scope);
@@ -146,7 +213,7 @@ export const cascadeWordLevelLyrics = async (
         try {
             const result = await fetchBestMatch(candidate, options);
             if (result && result.lyrics.timingGranularity === 'word') {
-                writeCache(scope, result);
+                writeCache(scope, result, [], options);
                 return result;
             }
         } catch (error) {

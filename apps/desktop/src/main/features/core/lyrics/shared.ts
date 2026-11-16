@@ -16,6 +16,28 @@ const DURATION_PENALTY_SLOPE = 3;
 // without fully overriding a strong name/artist match.
 const MAX_DURATION_PENALTY = 0.5;
 
+// Libraries frequently append a localized/translated title in trailing parentheses. The wording
+// differs per metadata source, so it pulls the fuzzy score below the match threshold. Featured
+// artists are part of the real title and must never be stripped.
+const TRAILING_PARENTHETICAL_PATTERN = /\s*[（(]([^（）()]*)[）)]\s*$/;
+const FEATURING_PATTERN = /\b(?:featuring|feat|ft)\.?\s*[^\s）)]/i;
+
+/**
+ * Title variant with a trailing parenthetical translation removed, for one retry of the match
+ * search. Returns null when there is nothing to strip, the title would become empty, or the
+ * parenthetical names featured artists.
+ */
+export const stripTrailingTranslation = (name: string): null | string => {
+    const match = TRAILING_PARENTHETICAL_PATTERN.exec(name);
+
+    if (!match || FEATURING_PATTERN.test(match[1])) {
+        return null;
+    }
+
+    const stripped = name.slice(0, match.index).trim();
+    return stripped.length > 0 ? stripped : null;
+};
+
 /**
  * Penalty added to the fuzzy match score when a candidate's duration diverges from the real
  * song. Unknown duration on either side is neutral (no penalty), so sources that do not report

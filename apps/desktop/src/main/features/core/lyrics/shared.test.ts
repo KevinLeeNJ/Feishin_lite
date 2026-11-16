@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { orderSearchResults, selectWordLevelFallbacks } from './shared';
+import { orderSearchResults, selectWordLevelFallbacks, stripTrailingTranslation } from './shared';
 
 import {
     InternetProviderLyricSearchResponse,
@@ -87,6 +87,34 @@ describe('orderSearchResults duration-aware ranking', () => {
         });
 
         expect(ranked[0].id).toBe('synced');
+    });
+});
+
+describe('stripTrailingTranslation', () => {
+    it('removes a trailing full-width parenthetical translation', () => {
+        expect(stripTrailingTranslation('夜曲（安静）')).toBe('夜曲');
+    });
+
+    it('removes a trailing half-width parenthetical with spacing', () => {
+        expect(stripTrailingTranslation('Lemon (Remix Version)')).toBe('Lemon');
+    });
+
+    it('keeps only one trailing parenthetical per retry', () => {
+        expect(stripTrailingTranslation('Song (Live) (Acoustic)')).toBe('Song (Live)');
+    });
+
+    it('ignores parentheticals that name featured artists', () => {
+        expect(stripTrailingTranslation('Song (feat. Jay Chou)')).toBeNull();
+        expect(stripTrailingTranslation('歌曲（feat.周杰伦）')).toBeNull();
+        expect(stripTrailingTranslation('Song (ft. A)')).toBeNull();
+        expect(stripTrailingTranslation('Song (Featuring A)')).toBeNull();
+    });
+
+    it('ignores titles without a usable trailing parenthetical', () => {
+        expect(stripTrailingTranslation('晴天')).toBeNull();
+        expect(stripTrailingTranslation('晴天 (Live)')).toBe('晴天');
+        expect(stripTrailingTranslation('（纯音乐）')).toBeNull();
+        expect(stripTrailingTranslation('Song (unclosed')).toBeNull();
     });
 });
 
