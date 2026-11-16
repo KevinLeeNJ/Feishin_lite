@@ -1,6 +1,6 @@
 import type { LyricPlayerRef } from '@applemusic-like-lyrics/react';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 
 import { subscribePlayerSpeed, subscribePlayerStatus, usePlayerStoreBase } from '/@/renderer/store';
 import { subscribePlayerProgress, useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
@@ -28,6 +28,7 @@ export const useAmllPlaybackClock = (
     playerRef: React.RefObject<LyricPlayerRef | null>,
     offsetMs: number,
     enabled = true,
+    rebuildKey?: unknown,
 ) => {
     const offsetRef = useRef(offsetMs);
     const statusRef = useRef<PlayerStatus>(PlayerStatus.STOPPED);
@@ -46,6 +47,25 @@ export const useAmllPlaybackClock = (
         return anchor.timeMs + elapsed + offsetRef.current;
     }, []);
 
+    // AMLL drives the per-word karaoke fill with Web Animations (`fade-word-*`)
+    // that it always plays at playbackRate 1, so at 0.5x/2x the fill runs at 1x
+    // while line switching follows the speed-scaled media clock. Scale those
+    // animations with the media rate so word highlighting matches playback.
+    const applyWordAnimationRate = useCallback(
+        (rate: number) => {
+            const element = playerRef.current?.lyricPlayer?.getElement();
+            if (!element) {
+                return;
+            }
+            for (const animation of element.getAnimations({ subtree: true })) {
+                if (animation.id.startsWith('fade-word-') && animation.playbackRate !== rate) {
+                    animation.playbackRate = rate;
+                }
+            }
+        },
+        [playerRef],
+    );
+
     const pushTime = useCallback(
         (isSeek: boolean): boolean => {
             const player = playerRef.current?.lyricPlayer;
@@ -62,9 +82,14 @@ export const useAmllPlaybackClock = (
             }
             player.setCurrentTime(timeMs, isSeek);
             lastPushedRef.current = timeMs;
+            // Line activation resets the word animations to rate 1; re-apply the
+            // speed-scaled rate afterwards so each new line's fill stays in sync.
+            if (speedRef.current !== 1) {
+                applyWordAnimationRate(speedRef.current);
+            }
             return true;
         },
-        [interpolatedTimeMs, playerRef],
+        [applyWordAnimationRate, interpolatedTimeMs, playerRef],
     );
 
     // Authoritative re-sync to the latest polled sample: mount, offset change, progress poll.
@@ -161,10 +186,12 @@ export const useAmllPlaybackClock = (
         });
 
         // Rate change rebases at the current estimate so the clock stays continuous;
-        // only subsequent interpolation uses the new speed.
+        // only subsequent interpolation uses the new speed. Word animations are
+        // scaled immediately (including resetting to 1) to track the media rate.
         const unsubscribeSpeed = subscribePlayerSpeed(({ speed }) => {
             rebaseToEstimate();
             speedRef.current = speed;
+            applyWordAnimationRate(speed);
         });
 
         return () => {
@@ -172,7 +199,15 @@ export const useAmllPlaybackClock = (
             unsubscribeSpeed();
             stopRaf();
         };
-    }, [enabled, pushWhenReady, rebaseToEstimate, resetAnchor, startPlayRaf, stopRaf]);
+    }, [
+        applyWordAnimationRate,
+        enabled,
+        pushWhenReady,
+        rebaseToEstimate,
+        resetAnchor,
+        startPlayRaf,
+        stopRaf,
+    ]);
 
     useEffect(() => {
         if (!enabled) return;
@@ -190,4 +225,15 @@ export const useAmllPlaybackClock = (
         });
         return unsubscribe;
     }, [enabled, interpolatedTimeMs, pushTime, resetAnchor]);
+
+    // Any lyric line rebuild (overlays resolving, settings change, or a fullscreen
+    // remount) makes AMLL rebuild at time 0 through a stale internal ref. While
+    // paused nothing re-pushes afterwards, so the view sticks at the song start.
+    // Restore the frozen position after the rebuild commits, before paint.
+    useLayoutEffect(() => {
+        if (!enabled) return;
+        if (statusRef.current !== PlayerStatus.PLAYING) {
+            pushWhenReady();
+        }
+    }, [enabled, pushWhenReady, rebuildKey]);
 };

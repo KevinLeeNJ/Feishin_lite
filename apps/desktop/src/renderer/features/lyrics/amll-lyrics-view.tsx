@@ -89,8 +89,6 @@ export const AmllLyricsView = ({
     const { alignment, followScrollAlignment, showMatch, showProvider } = useLyricsSettings();
     const status = usePlayerStoreBase((state) => state.player.status);
 
-    useAmllPlaybackClock(playerRef, offsetMs, !preview);
-
     const translationTrack = useMemo(() => {
         if (translationLyrics) return translationLyrics;
         if (translatedLyrics) return translationStringsToTrack(lyrics, translatedLyrics);
@@ -110,6 +108,10 @@ export const AmllLyricsView = ({
             }),
         [agents, lyrics, romanizationTrack, syncedRomajiLyrics, translationTrack],
     );
+
+    // The line array is the rebuild trigger: when it changes AMLL rebuilds at 0,
+    // so pass it as the clock's rebuild key to restore the paused position.
+    useAmllPlaybackClock(playerRef, offsetMs, !preview, amllLines);
 
     const handleSeek = useCallback(
         (timeSec: number) => {
