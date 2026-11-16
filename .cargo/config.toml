@@ -1,0 +1,4 @@
+[env]
+# MSVC otherwise reports C++98 and enables an obsolete dependency polyfill.
+CXXFLAGS_x86_64_pc_windows_msvc = "/std:c++17 /Zc:__cplusplus"
+CXXFLAGS_aarch64_pc_windows_msvc = "/std:c++17 /Zc:__cplusplus"

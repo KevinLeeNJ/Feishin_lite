@@ -115,7 +115,7 @@ export const AmllLyricsView = ({
 
     const handleSeek = useCallback(
         (timeSec: number) => {
-            if (playbackType === PlayerType.LOCAL && mpvPlayer) {
+            if (!window.api?.hostBridge && playbackType === PlayerType.LOCAL && mpvPlayer) {
                 mpvPlayer.seekTo(timeSec);
             } else {
                 mpris?.updateSeek(timeSec);
@@ -172,6 +172,7 @@ export const AmllLyricsView = ({
             bottomLine={bottomLine}
             className={styles.player}
             currentTime={preview ? 0 : undefined}
+            data-alignment={alignment}
             disabled={preview}
             lyricLines={amllLines}
             onLyricLineClick={preview ? undefined : handleLineClick}

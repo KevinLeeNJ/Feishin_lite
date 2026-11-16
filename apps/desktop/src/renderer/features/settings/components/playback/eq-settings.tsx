@@ -283,6 +283,9 @@ export const EqSettings = memo(() => {
 
     const applyFilters = useCallback(
         (eq: EqSettingsType, compressor: CompressorSettings) => {
+            if (isElectron()) {
+                return;
+            }
             // ── MPV player ────────────────────────────────────────────────
             if (settings.type === PlayerType.LOCAL) {
                 const filterStr = buildMpvAudioFilters(eq, compressor);

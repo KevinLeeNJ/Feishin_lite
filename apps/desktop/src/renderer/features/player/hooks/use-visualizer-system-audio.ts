@@ -4,8 +4,9 @@ import { useCallback, useEffect, useRef } from 'react';
 import i18n from '/@/i18n/i18n';
 import { useWebAudio } from '/@/renderer/features/player/hooks/use-webaudio';
 import { usePlaybackType } from '/@/renderer/store/settings.store';
+import { isClientPlayback } from '/@/shared/backend/playback-target';
 import { toast } from '/@/shared/components/toast/toast';
-import { PlayerType, WebAudio } from '/@/shared/types/types';
+import { WebAudio } from '/@/shared/types/types';
 
 export function useVisualizerSystemAudio(options: {
     onSystemAudioCaptureDenied?: () => void;
@@ -63,7 +64,7 @@ export function useVisualizerSystemAudio(options: {
     }, [setWebAudio]);
 
     useEffect(() => {
-        if (playbackType === PlayerType.WEB || !shouldAttemptConnection) {
+        if (!isClientPlayback(playbackType) || !shouldAttemptConnection) {
             disconnect();
         }
     }, [playbackType, shouldAttemptConnection, disconnect]);
@@ -144,7 +145,7 @@ export function useVisualizerSystemAudio(options: {
     connectRef.current = connect;
 
     useEffect(() => {
-        if (playbackType !== PlayerType.LOCAL || !isElectron() || !shouldAttemptConnection) {
+        if (!isClientPlayback(playbackType) || !isElectron() || !shouldAttemptConnection) {
             return;
         }
 

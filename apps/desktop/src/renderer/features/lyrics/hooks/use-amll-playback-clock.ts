@@ -2,6 +2,7 @@ import type { LyricPlayerRef } from '@applemusic-like-lyrics/react';
 
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 
+import { nativePlaybackTimeMs } from '/@/renderer/features/player/audio-player/native-playback-clock';
 import { subscribePlayerSpeed, subscribePlayerStatus, usePlayerStoreBase } from '/@/renderer/store';
 import { subscribePlayerProgress, useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
 import { PlayerStatus } from '/@/shared/types/types';
@@ -39,6 +40,10 @@ export const useAmllPlaybackClock = (
     const lastPushedRef = useRef(0);
 
     const interpolatedTimeMs = useCallback(() => {
+        const native = nativePlaybackTimeMs();
+        if (native !== undefined) {
+            return native + offsetRef.current;
+        }
         const anchor = anchorRef.current;
         const elapsed =
             statusRef.current === PlayerStatus.PLAYING

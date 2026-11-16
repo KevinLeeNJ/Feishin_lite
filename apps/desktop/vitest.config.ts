@@ -14,6 +14,9 @@ export default defineConfig({
     test: {
         environment: 'node',
         include: [
+            'src/shared/backend/**/*.test.ts',
+            'src/main/features/core/backend/**/*.test.ts',
+            'src/renderer/features/player/audio-player/**/*.test.ts',
             'src/shared/lyrics/**/*.test.ts',
             'src/main/features/core/lyrics/**/*.test.ts',
             'src/renderer/features/lyrics/api/**/*.test.ts',

@@ -714,6 +714,7 @@ const PlaybackSettingsSchema = z.object({
     mpvAudioDeviceId: z.string().nullable().optional(),
     mpvExtraParameters: z.array(z.string()),
     mpvProperties: MpvSettingsSchema,
+    nativeAudioDeviceId: z.string().nullable().optional(),
     preservePitch: z.boolean(),
     previousLocalVolume: z.number().min(0).max(100).optional(),
     previousPlayerType: z.nativeEnum(PlayerType).optional(),

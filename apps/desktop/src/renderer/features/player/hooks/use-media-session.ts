@@ -71,7 +71,10 @@ export const useMediaSession = () => {
             return true;
         }
 
-        return Boolean(mediaSessionEnabled && playbackType === PlayerType.WEB);
+        return Boolean(
+            mediaSessionEnabled &&
+            (playbackType === PlayerType.WEB || playbackType === PlayerType.LOCAL),
+        );
     }, [mediaSessionEnabled, playbackType]);
 
     useEffect(() => {

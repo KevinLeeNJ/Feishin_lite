@@ -1,0 +1,21 @@
+[package]
+name = "music-audio-engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+cpal.workspace = true
+serde.workspace = true
+symphonia.workspace = true
+ringbuf.workspace = true
+rubato.workspace = true
+stream-download.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+ssstretch.workspace = true
+biquad.workspace = true
+dsp-core.workspace = true
+
+[target.'cfg(target_os = "windows")'.dependencies]
+wasapi = "=0.27.0"

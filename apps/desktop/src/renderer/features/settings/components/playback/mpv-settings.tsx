@@ -226,6 +226,7 @@ export const MpvSettings = memo(() => {
             description: t('setting.sampleRate', {
                 context: 'description',
             }),
+            isHidden: isElectron(),
             note: 'Page refresh required for web player',
             title: t('setting.sampleRate'),
         },
@@ -245,7 +246,7 @@ export const MpvSettings = memo(() => {
             description: t('setting.audioExclusiveMode', {
                 context: 'description',
             }),
-            isHidden: settings.type !== PlayerType.LOCAL,
+            isHidden: isElectron() || settings.type !== PlayerType.LOCAL,
             title: t('setting.audioExclusiveMode'),
         },
     ];

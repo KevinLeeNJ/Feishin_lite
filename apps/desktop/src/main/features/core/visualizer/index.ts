@@ -2,6 +2,7 @@ import { ipcMain } from 'electron';
 
 import { store } from '../settings';
 
+import { isClientPlayback } from '/@/shared/backend/playback-target';
 import { PlayerType } from '/@/shared/types/types';
 
 let isLocalVisualizerSurfaceVisible = false;
@@ -13,7 +14,7 @@ export const setLocalVisualizerSurfaceVisible = (visible: boolean) => {
 export const canHandleVisualizerDisplayMedia = (): boolean => {
     const playbackType = store.get('playbackType', PlayerType.WEB) as PlayerType;
 
-    if (playbackType !== PlayerType.LOCAL) {
+    if (!isClientPlayback(playbackType)) {
         return false;
     }
 

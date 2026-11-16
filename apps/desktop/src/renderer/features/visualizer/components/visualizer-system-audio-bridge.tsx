@@ -6,6 +6,7 @@ import { useIsLocalVisualizerSurfaceVisible } from '/@/renderer/features/player/
 import { useVisualizerSystemAudio } from '/@/renderer/features/player/hooks/use-visualizer-system-audio';
 import { closeLocalVisualizerSurfaces } from '/@/renderer/features/player/utils/close-local-visualizer-surfaces';
 import { useMpvSettings, usePlaybackType } from '/@/renderer/store';
+import { isClientPlayback } from '/@/shared/backend/playback-target';
 import { Button } from '/@/shared/components/button/button';
 import { Group } from '/@/shared/components/group/group';
 import { Modal } from '/@/shared/components/modal/modal';
@@ -13,7 +14,6 @@ import { Stack } from '/@/shared/components/stack/stack';
 import { Text } from '/@/shared/components/text/text';
 import { toast } from '/@/shared/components/toast/toast';
 import { useDisclosure } from '/@/shared/hooks/use-disclosure';
-import { PlayerType } from '/@/shared/types/types';
 
 const CONSENT_GRANTED_KEY = 'visualizer_system_audio_consent_granted';
 
@@ -28,7 +28,7 @@ export function VisualizerSystemAudioBridgeHook() {
             return;
         }
 
-        const shouldReportVisible = playbackType === PlayerType.LOCAL && isVisualizerSurfaceVisible;
+        const shouldReportVisible = isClientPlayback(playbackType) && isVisualizerSurfaceVisible;
 
         window.api.visualizer.setLocalSurfaceVisible(shouldReportVisible);
 
@@ -37,7 +37,7 @@ export function VisualizerSystemAudioBridgeHook() {
         };
     }, [playbackType, isVisualizerSurfaceVisible]);
 
-    if (!isElectron() || playbackType !== PlayerType.LOCAL) {
+    if (!isElectron() || !isClientPlayback(playbackType)) {
         return null;
     }
 
@@ -58,7 +58,7 @@ function VisualizerSystemAudioBridge() {
     const isExclusiveModeEnabled = audioExclusiveMode === 'yes';
     const isVisualizerBlockedByExclusiveMode =
         isElectron() &&
-        playbackType === PlayerType.LOCAL &&
+        isClientPlayback(playbackType) &&
         isVisualizerSurfaceVisible &&
         isExclusiveModeEnabled;
 
@@ -91,7 +91,7 @@ function VisualizerSystemAudioBridge() {
 
     const eligibleForPrompt =
         isElectron() &&
-        playbackType === PlayerType.LOCAL &&
+        isClientPlayback(playbackType) &&
         !isExclusiveModeEnabled &&
         isVisualizerSurfaceVisible &&
         promptState !== 'loading' &&
@@ -121,7 +121,7 @@ function VisualizerSystemAudioBridge() {
 
     const shouldAttemptConnection =
         isElectron() &&
-        playbackType === PlayerType.LOCAL &&
+        isClientPlayback(playbackType) &&
         !isExclusiveModeEnabled &&
         isVisualizerSurfaceVisible &&
         promptState !== 'loading' &&
@@ -152,7 +152,7 @@ function VisualizerSystemAudioBridge() {
         closePrompt();
     }, [closePrompt, persistConsent]);
 
-    if (!isElectron() || playbackType !== PlayerType.LOCAL) {
+    if (!isElectron() || !isClientPlayback(playbackType)) {
         return null;
     }
 

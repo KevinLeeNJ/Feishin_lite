@@ -1,4 +1,5 @@
 import './autodiscover';
+import './backend';
 import './dlna';
 import './custom-themes';
 import './lyrics';

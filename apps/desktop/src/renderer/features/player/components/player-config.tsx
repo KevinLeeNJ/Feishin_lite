@@ -6,6 +6,7 @@ import { eventEmitter } from '/@/renderer/events/event-emitter';
 import { usePlayer } from '/@/renderer/features/player/context/player-context';
 import {
     getDefaultAudioDevice,
+    selectAudioDestination,
     useAudioDevices,
 } from '/@/renderer/features/settings/components/playback/audio-settings';
 import {
@@ -70,6 +71,7 @@ export const PlayerConfig = () => {
             {
                 component: <AudioPlayerTypeConfig />,
                 id: 'audioPlayerType',
+                isHidden: isElectron(),
                 label: t('setting.audioPlayer'),
             },
             {
@@ -303,13 +305,12 @@ const AudioDeviceConfig = () => {
     const status = usePlayerStatus();
     const playbackType = usePlaybackType();
     const playbackSettings = usePlaybackSettings();
-    const { setSettings } = useSettingsStoreActions();
 
     const audioDevices = useAudioDevices(playbackType);
     const audioDeviceId =
-        playbackType === PlayerType.LOCAL
-            ? playbackSettings.mpvAudioDeviceId
-            : playbackSettings.audioDeviceId;
+        playbackType === PlayerType.JUKEBOX
+            ? PlayerType.JUKEBOX
+            : playbackSettings.nativeAudioDeviceId;
 
     return (
         <Select
@@ -317,17 +318,8 @@ const AudioDeviceConfig = () => {
             data={audioDevices}
             disabled={status === PlayerStatus.PLAYING}
             key={playbackType}
-            onChange={(e) => {
-                setSettings({
-                    playback: {
-                        ...playbackSettings,
-                        ...(playbackType === PlayerType.LOCAL
-                            ? { mpvAudioDeviceId: e }
-                            : { audioDeviceId: e }),
-                    },
-                });
-            }}
-            value={audioDeviceId ?? getDefaultAudioDevice(audioDevices, playbackType)}
+            onChange={selectAudioDestination}
+            value={audioDeviceId ?? getDefaultAudioDevice(audioDevices)}
             variant="filled"
             width="100%"
         />

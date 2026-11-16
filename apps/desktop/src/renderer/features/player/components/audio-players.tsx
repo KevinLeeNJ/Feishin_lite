@@ -7,7 +7,7 @@ import { DiscordRpcHook } from '/@/renderer/features/discord-rpc/use-discord-rpc
 import { DlnaPlayer } from '/@/renderer/features/player/audio-player/dlna-player';
 import { MainPlayerListenerHook } from '/@/renderer/features/player/audio-player/hooks/use-main-player-listener';
 import { JukeboxPlayer } from '/@/renderer/features/player/audio-player/jukebox-player';
-import { MpvPlayer } from '/@/renderer/features/player/audio-player/mpv-player';
+import { RustPlayer } from '/@/renderer/features/player/audio-player/rust-player';
 import { WebPlayer } from '/@/renderer/features/player/audio-player/web-player';
 import { SleepTimerHook } from '/@/renderer/features/player/components/sleep-timer-button';
 import { AutoDJHook } from '/@/renderer/features/player/hooks/use-auto-dj';
@@ -210,7 +210,12 @@ const AudioPlayersContent = ({
     }, []);
 
     useEffect(() => {
-        if (playbackType !== PlayerType.WEB || !webAudio || !('AudioContext' in window)) {
+        if (
+            isElectron() ||
+            playbackType !== PlayerType.WEB ||
+            !webAudio ||
+            !('AudioContext' in window)
+        ) {
             return;
         }
 
@@ -372,8 +377,8 @@ const AudioPlayersContent = ({
         };
     }, [serverId]);
 
-    if (playbackType === PlayerType.LOCAL) {
-        return <MpvPlayer />;
+    if (isElectron() && (playbackType === PlayerType.LOCAL || playbackType === PlayerType.WEB)) {
+        return isRadioActive ? <RadioWebPlayer /> : <RustPlayer />;
     }
 
     if (playbackType === PlayerType.WEB) {
