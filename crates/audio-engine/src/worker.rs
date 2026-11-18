@@ -1,8 +1,11 @@
+mod transition;
+
 use crate::{
     decoder::DecoderStream,
     media::NetworkMedia,
-    model::{AudioError, Settings, Track},
+    model::{AudioError, Settings, Track, TransitionMode},
     output::{push, Clock, Frame},
+    prefetch::{NextMessage, PreparedNext},
     processing::Pipeline,
 };
 use ringbuf::HeapProd;
@@ -13,11 +16,14 @@ use std::sync::{
 };
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
+use transition::{Overlap, Step};
 
 pub enum Update {
     SourceRate(u32, Sender<Result<Target, AudioError>>),
     Duration(u64, f64),
+    NextSourceRate(u64, u32),
     Complete(u64),
+    Committed(u64, Track, u64),
     Error(u64, String),
 }
 
@@ -36,6 +42,7 @@ pub struct Job {
     pub cancel: CancellationToken,
     pub updates: Sender<Update>,
     pub seeks: Receiver<SeekRequest>,
+    pub nexts: Receiver<NextMessage>,
     pub runtime: Arc<tokio::runtime::Runtime>,
 }
 
@@ -64,27 +71,35 @@ impl Job {
     fn decode(&mut self) -> Result<(), AudioError> {
         let mut playback = self.open()?;
         self.report_duration(playback.decoder.duration)?;
+        let mut pending: Option<PreparedNext> = None;
+        let mut overlap: Option<Overlap> = None;
+        let mut sequence = 0u64;
         while !self.cancel.is_cancelled() {
+            self.receive_next(&mut sequence, &mut pending, &mut overlap)?;
             if let Some(request) = self.next_seek(&playback)? {
                 if request.generation != self.clock.generation.load(Ordering::Acquire) {
                     continue;
                 }
-                self.generation = request.generation;
-                playback.decoder.seek(request.position)?;
-                playback.pipeline = Pipeline::new(
-                    playback.decoder.rate,
-                    self.target().rate,
-                    self.current_settings()?,
-                    self.track.gain_db,
-                )?;
-                playback.position = request.position;
-                playback.finished = false;
-                self.report_duration(playback.decoder.duration)?;
+                overlap = None;
+                self.seek_to(&mut playback, request)?;
             }
-            if !playback.finished
-                && self.generation == self.clock.generation.load(Ordering::Acquire)
+            if let Some(mut active) = overlap.take() {
+                if self.current_settings()?.transition.mode == TransitionMode::Crossfade {
+                    match active.pump(self, &mut playback)? {
+                        Step::Continue => overlap = Some(active),
+                        Step::Commit => self.commit(&mut playback, active)?,
+                        Step::Abort => {}
+                    }
+                }
+                continue;
+            }
+            if playback.finished || self.generation != self.clock.generation.load(Ordering::Acquire)
             {
-                self.decode_next(&mut playback)?;
+                continue;
+            }
+            self.try_arm(&playback, &mut pending, &mut overlap)?;
+            if overlap.is_none() {
+                self.decode_next(&mut playback, &mut pending)?;
             }
         }
         Ok(())
@@ -104,6 +119,7 @@ impl Job {
             self.target().rate,
             self.current_settings()?,
             self.track.gain_db,
+            decoder.replay_gain.or(self.track.replay_gain),
         )?;
         Ok(Playback {
             decoder,
@@ -156,7 +172,51 @@ impl Job {
         }
     }
 
-    fn decode_next(&self, playback: &mut Playback) -> Result<(), AudioError> {
+    fn seek_to(&mut self, playback: &mut Playback, request: SeekRequest) -> Result<(), AudioError> {
+        self.generation = request.generation;
+        playback.decoder.seek(request.position)?;
+        playback.pipeline = Pipeline::new(
+            playback.decoder.rate,
+            self.target().rate,
+            self.current_settings()?,
+            self.track.gain_db,
+            playback.decoder.replay_gain.or(self.track.replay_gain),
+        )?;
+        playback.position = request.position;
+        playback.finished = false;
+        self.report_duration(playback.decoder.duration)
+    }
+
+    fn receive_next(
+        &self,
+        sequence: &mut u64,
+        pending: &mut Option<PreparedNext>,
+        overlap: &mut Option<Overlap>,
+    ) -> Result<(), AudioError> {
+        while let Ok(message) = self.nexts.try_recv() {
+            match message {
+                NextMessage::Cancel { sequence: next } => {
+                    *sequence = next;
+                    *pending = None;
+                    *overlap = None;
+                }
+                NextMessage::Prepared { sequence: next, .. } if next != *sequence => {}
+                NextMessage::Prepared { sequence, next } => {
+                    self.updates
+                        .send(Update::NextSourceRate(sequence, next.decoder.rate))
+                        .map_err(|_| AudioError("Audio control closed".into()))?;
+                    *pending = Some(next);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn decode_next(
+        &mut self,
+        playback: &mut Playback,
+        pending: &mut Option<PreparedNext>,
+    ) -> Result<(), AudioError> {
         let input = playback.decoder.next()?;
         let finish = input.is_none();
         let settings = self.current_settings()?;
@@ -168,13 +228,22 @@ impl Job {
             return Ok(());
         }
         if finish && self.generation == self.clock.generation.load(Ordering::Acquire) {
-            playback.finished = true;
-            self.clock.finished.store(true, Ordering::Release);
-            self.updates
-                .send(Update::Complete(self.generation))
-                .map_err(|_| AudioError("Audio control closed".into()))?;
+            // "none" plays each track to its natural end; the renderer loads the next one.
+            let prepared = match settings.transition.mode {
+                TransitionMode::None => None,
+                _ => pending.take(),
+            };
+            if let Some(prepared) = prepared {
+                if !settings.transition_rate_mismatch(playback.decoder.rate, prepared.decoder.rate)
+                {
+                    return self.switch_gapless(playback, prepared);
+                }
+                eprintln!("Skipping native transition: next track sample rate differs");
+            }
+            self.finish(playback)
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 
     fn write(

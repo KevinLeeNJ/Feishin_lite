@@ -16,16 +16,18 @@ const DURATION_PENALTY_SLOPE = 3;
 // without fully overriding a strong name/artist match.
 const MAX_DURATION_PENALTY = 0.5;
 
-// Libraries frequently append a localized/translated title in trailing parentheses. The wording
-// differs per metadata source, so it pulls the fuzzy score below the match threshold. Featured
-// artists are part of the real title and must never be stripped.
-const TRAILING_PARENTHETICAL_PATTERN = /\s*[（(]([^（）()]*)[）)]\s*$/;
+// Libraries frequently append a localized/translated title in parentheses. The wording
+// differs per metadata source, so it pulls the fuzzy score below the match threshold. The
+// translation may sit before a trailing feat credit, which is part of the real title and must
+// survive the strip (and must never be stripped itself).
+const TRAILING_PARENTHETICAL_PATTERN =
+    /\s*[（(]([^（）()]*)[）)](\s*[（(](?:feat\.?|ft\.?|featuring)\b[^（）()]*[）)])?\s*$/i;
 const FEATURING_PATTERN = /\b(?:featuring|feat|ft)\.?\s*[^\s）)]/i;
 
 /**
- * Title variant with a trailing parenthetical translation removed, for one retry of the match
- * search. Returns null when there is nothing to strip, the title would become empty, or the
- * parenthetical names featured artists.
+ * Title variant with a parenthetical translation removed, for one retry of the match search.
+ * A trailing feat credit is kept. Returns null when there is nothing to strip, the title would
+ * become empty, or the parenthetical itself names featured artists.
  */
 export const stripTrailingTranslation = (name: string): null | string => {
     const match = TRAILING_PARENTHETICAL_PATTERN.exec(name);
@@ -34,7 +36,7 @@ export const stripTrailingTranslation = (name: string): null | string => {
         return null;
     }
 
-    const stripped = name.slice(0, match.index).trim();
+    const stripped = (name.slice(0, match.index) + (match[2] ?? '')).trim();
     return stripped.length > 0 ? stripped : null;
 };
 
@@ -60,6 +62,45 @@ const durationPenalty = (candidateSeconds?: number, songSeconds?: number): numbe
     );
 };
 
+// Library titles mix full-width and half-width punctuation across metadata sources; folding
+// them keeps the fuzzy score from punishing a purely cosmetic difference.
+const normalizeMatchText = (value: string): string =>
+    value.normalize('NFKC').toLowerCase().replace(/\s+/g, ' ').trim();
+
+const PARENTHETICAL_PATTERN = /[（(][^（）()]*[）)]/g;
+const NON_WORD_PATTERN = /[^\p{L}\p{N}]+/gu;
+
+/** Title core without parentheticals (translations, feat credits) and punctuation. */
+const coreTitle = (value: string): string =>
+    normalizeMatchText(value).replace(PARENTHETICAL_PATTERN, '').replace(NON_WORD_PATTERN, '');
+
+const artistTokens = (value: string): string[] =>
+    normalizeMatchText(value)
+        .split(/[,;/&、・•·]|\s+(?:feat\.?|ft\.?|with)\s+/)
+        .map((token) => token.replace(NON_WORD_PATTERN, ''))
+        .filter(Boolean);
+
+/**
+ * Trust-boundary gate: a remote candidate must actually be this song, not merely the least
+ * bad fuzzy hit. Fuzzy scores alone accepted an unrelated track once provider search returned
+ * nonsense for a mixed-language query, so acceptance also requires the same title core and a
+ * shared artist credit. Missing artist metadata on either side falls back to the title check.
+ */
+export const isPlausibleMatch = (
+    candidate: InternetProviderLyricSearchResponse,
+    params: LyricSearchQuery,
+): boolean => {
+    const songCore = coreTitle(params.name ?? '');
+    const candidateCore = coreTitle(candidate.name ?? '');
+    if (!songCore || !candidateCore) return false;
+    if (!songCore.includes(candidateCore) && !candidateCore.includes(songCore)) return false;
+
+    const songArtists = artistTokens(params.artist ?? '');
+    const candidateArtists = artistTokens(candidate.artist ?? '');
+    if (!songArtists.length || !candidateArtists.length) return true;
+    return songArtists.some((token) => candidateArtists.includes(token));
+};
+
 export const orderSearchResults = (args: {
     params: LyricSearchQuery;
     results: InternetProviderLyricSearchResponse[];
@@ -70,8 +111,8 @@ export const orderSearchResults = (args: {
         fieldNormWeight: 1,
         includeScore: true,
         keys: [
-            { getFn: (song) => song.name, name: 'name', weight: 2 },
-            { getFn: (song) => song.artist, name: 'artist', weight: 2 },
+            { getFn: (song) => normalizeMatchText(song.name), name: 'name', weight: 2 },
+            { getFn: (song) => normalizeMatchText(song.artist), name: 'artist', weight: 2 },
         ],
         threshold: 0.6,
     };
@@ -83,18 +124,18 @@ export const orderSearchResults = (args: {
     if (params.artist && params.name) {
         const artistFuse = new Fuse(results, {
             includeScore: true,
-            keys: [{ getFn: (song) => song.artist, name: 'artist' }],
+            keys: [{ getFn: (song) => normalizeMatchText(song.artist), name: 'artist' }],
             threshold: 0.6,
         });
 
         const nameFuse = new Fuse(results, {
             includeScore: true,
-            keys: [{ getFn: (song) => song.name, name: 'name' }],
+            keys: [{ getFn: (song) => normalizeMatchText(song.name), name: 'name' }],
             threshold: 0.6,
         });
 
-        const artistResults = artistFuse.search(params.artist);
-        const nameResults = nameFuse.search(params.name);
+        const artistResults = artistFuse.search(normalizeMatchText(params.artist));
+        const nameResults = nameFuse.search(normalizeMatchText(params.name));
 
         const artistScores = new Map(artistResults.map((r) => [r.item.id, r.score ?? 1]));
         const nameScores = new Map(nameResults.map((r) => [r.item.id, r.score ?? 1]));
@@ -128,8 +169,8 @@ export const orderSearchResults = (args: {
         searchResults = Array.from(combinedResults.values());
     } else {
         searchResults = fuse.search({
-            ...(params.artist && { artist: params.artist }),
-            ...(params.name && { name: params.name }),
+            ...(params.artist && { artist: normalizeMatchText(params.artist) }),
+            ...(params.name && { name: normalizeMatchText(params.name) }),
         });
     }
 

@@ -131,3 +131,30 @@ export async function waitForAudio(
     }
     throw new Error(`Audio playback condition timed out: ${JSON.stringify(last)}`);
 }
+
+export async function waitForCommit(
+    client: BackendClient,
+    instanceId: string,
+): Promise<{ committed: AudioSnapshot; last: AudioSnapshot; sawEnded: boolean }> {
+    const deadline = Date.now() + 15000;
+    let last: AudioSnapshot | undefined;
+    let sawEnded = false;
+    while (Date.now() < deadline) {
+        const { snapshot } = await client.request('snapshot');
+        if (snapshot.error) {
+            throw new Error(snapshot.error);
+        }
+        if (snapshot.instanceId === instanceId) {
+            if (!last) {
+                throw new Error('Native commit before any current snapshot');
+            }
+            return { committed: snapshot, last, sawEnded };
+        }
+        if (snapshot.ended) {
+            sawEnded = true;
+        }
+        last = snapshot;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    throw new Error(`Native commit timed out: ${JSON.stringify(last)}`);
+}

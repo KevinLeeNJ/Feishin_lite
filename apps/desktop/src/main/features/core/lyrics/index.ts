@@ -40,9 +40,15 @@ ipcMain.handle(
             fallbacks: InternetProviderLyricSearchResponse[];
             options: LyricsFetchOptions;
             scope: LyricsScope;
+            song: Song;
         },
     ) => {
-        return cascadeWordLevelLyrics(payload.fallbacks, payload.options, payload.scope);
+        return cascadeWordLevelLyrics(
+            payload.fallbacks,
+            payload.options,
+            payload.scope,
+            payload.song,
+        );
     },
 );
 

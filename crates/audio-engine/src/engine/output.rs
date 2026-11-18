@@ -7,6 +7,19 @@ use crate::{
 use std::sync::{atomic::Ordering, mpsc::Sender, Arc, Mutex};
 
 impl Engine {
+    pub fn visualizer_samples(
+        &self,
+    ) -> Result<Option<crate::model::VisualizerSamples>, AudioError> {
+        #[cfg(target_os = "windows")]
+        return self.clock.visualizer.read(
+            self.clock.generation.load(Ordering::Acquire),
+            self.output.as_ref().map_or(0, |output| output.rate),
+        );
+
+        #[cfg(not(target_os = "windows"))]
+        Ok(None)
+    }
+
     pub(super) fn apply_settings(&mut self, settings: Settings) -> Result<(), AudioError> {
         settings.validate()?;
         let changed = self

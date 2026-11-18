@@ -13,6 +13,7 @@ import { lyricsQueries } from '/@/renderer/features/lyrics/api/lyrics-api';
 import { Lyrics } from '/@/renderer/features/lyrics/lyrics';
 import { PlayQueue } from '/@/renderer/features/now-playing/components/play-queue';
 import { PlayQueueListControls } from '/@/renderer/features/now-playing/components/play-queue-list-controls';
+import { useVisualizerExclusiveBlocked } from '/@/renderer/features/player/hooks/use-visualizer-exclusive-blocked';
 import { AppRoute } from '/@/renderer/router/routes';
 import {
     useCombinedLyricsAndVisualizer,
@@ -30,6 +31,7 @@ import {
 import { ActionIcon, ActionIconGroup } from '/@/shared/components/action-icon/action-icon';
 import { Flex } from '/@/shared/components/flex/flex';
 import { Stack } from '/@/shared/components/stack/stack';
+import { Text } from '/@/shared/components/text/text';
 import { ItemListKey, Platform } from '/@/shared/types/types';
 
 type SidebarPanelType = 'lyrics' | 'queue' | 'visualizer';
@@ -396,23 +398,33 @@ const LyricsPanel = () => {
 };
 
 const VisualizerPanel = () => {
+    const { t } = useTranslation();
+    const blocked = useVisualizerExclusiveBlocked();
     const visualizerType = useSettingsStore((store) => store.visualizer.type);
 
     return (
         <div className={styles.visualizerSection}>
             <PanelReorderControls panelType="visualizer" />
-            <Suspense fallback={<></>}>
-                {visualizerType === 'butterchurn' ? (
-                    <ButterchurnVisualizer />
-                ) : (
-                    <AudioMotionAnalyzerVisualizer />
-                )}
-            </Suspense>
+            {blocked ? (
+                <Text c="dimmed" p="md" size="sm">
+                    {t('visualizer.exclusiveUnavailable')}
+                </Text>
+            ) : (
+                <Suspense fallback={<></>}>
+                    {visualizerType === 'butterchurn' ? (
+                        <ButterchurnVisualizer />
+                    ) : (
+                        <AudioMotionAnalyzerVisualizer />
+                    )}
+                </Suspense>
+            )}
         </div>
     );
 };
 
 const CombinedLyricsAndVisualizerPanel = () => {
+    const { t } = useTranslation();
+    const blocked = useVisualizerExclusiveBlocked();
     const currentSong = usePlayerSong();
     const visualizerType = useSettingsStore((store) => store.visualizer.type);
     const showLyricsInSidebar = useShowLyricsInSidebar();
@@ -457,7 +469,12 @@ const CombinedLyricsAndVisualizerPanel = () => {
         <div className={styles.lyricsSection}>
             <PanelReorderControls panelType="lyrics" />
             {showLyricsInSidebar && <Lyrics fadeOutNoLyricsMessage={true} settingsKey="sidebar" />}
-            {showVisualizer && (
+            {showVisualizer && blocked && (
+                <Text c="dimmed" p="xs" size="xs">
+                    {t('visualizer.exclusiveUnavailable')}
+                </Text>
+            )}
+            {showVisualizer && !blocked && (
                 <div
                     className={clsx(styles.visualizerOverlay, {
                         [styles.visualizerOverlayDimmed]: hasLyrics && showLyricsInSidebar,

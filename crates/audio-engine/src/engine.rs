@@ -1,8 +1,12 @@
 mod output;
+mod snapshot;
+#[cfg(test)]
+mod tests;
 
 use crate::{
-    model::{AudioError, Settings, Snapshot, Track},
+    model::{AudioError, Settings, Track},
     output::{Clock, Frame, Output},
+    prefetch::{self, NextMessage},
     worker::{Job, SeekRequest, Update},
 };
 use ringbuf::HeapProd;
@@ -16,6 +20,7 @@ use tokio_util::sync::CancellationToken;
 pub struct Engine {
     clock: Arc<Clock>,
     source_rate: Option<u32>,
+    next_source_rate: Option<u32>,
     output_request: Option<u32>,
     runtime: Arc<tokio::runtime::Runtime>,
     output: Option<Output>,
@@ -23,11 +28,20 @@ pub struct Engine {
     settings: Option<Arc<Mutex<Settings>>>,
     track: Option<Track>,
     cancel: CancellationToken,
+    prefetch_cancel: CancellationToken,
+    prefetch_sequence: u64,
     updates: Option<Receiver<Update>>,
     seeks: Option<Sender<SeekRequest>>,
+    nexts: Option<Sender<NextMessage>>,
+    pending_commit: Option<PendingCommit>,
     generation: u64,
     complete: bool,
     error: Option<String>,
+}
+
+struct PendingCommit {
+    track: Track,
+    consumed_at: u64,
 }
 
 impl Engine {
@@ -42,6 +56,7 @@ impl Engine {
         Ok(Self {
             clock,
             source_rate: None,
+            next_source_rate: None,
             output_request: None,
             runtime: Arc::new(runtime),
             output: None,
@@ -49,8 +64,12 @@ impl Engine {
             settings: None,
             track: None,
             cancel: CancellationToken::new(),
+            prefetch_cancel: CancellationToken::new(),
+            prefetch_sequence: 0,
             updates: None,
             seeks: None,
+            nexts: None,
+            pending_commit: None,
             generation: 0,
             complete: false,
             error: None,
@@ -67,16 +86,21 @@ impl Engine {
         settings.validate()?;
         validate_track(&track, start)?;
         self.cancel.cancel();
+        self.prefetch_cancel.cancel();
         self.source_rate = None;
+        self.next_source_rate = None;
         self.apply_settings(settings.clone())?;
         self.cancel = CancellationToken::new();
+        self.prefetch_cancel = CancellationToken::new();
         self.generation += 1;
         self.complete = false;
         self.error = None;
+        self.pending_commit = None;
         self.clock.paused.store(paused, Ordering::Release);
         self.clock.begin(self.generation, start);
         let (sender, receiver) = mpsc::channel();
         let (seek_sender, seeks) = mpsc::channel();
+        let (next_sender, nexts) = mpsc::channel();
         let job = Job {
             track: track.clone(),
             generation: self.generation,
@@ -87,6 +111,7 @@ impl Engine {
             cancel: self.cancel.clone(),
             updates: sender,
             seeks,
+            nexts,
             runtime: self.runtime.clone(),
         };
         std::thread::Builder::new()
@@ -96,6 +121,35 @@ impl Engine {
         self.track = Some(track);
         self.updates = Some(receiver);
         self.seeks = Some(seek_sender);
+        self.nexts = Some(next_sender);
+        Ok(())
+    }
+
+    pub fn prepare_next(&mut self, track: Option<Track>) -> Result<(), AudioError> {
+        if let Some(track) = &track {
+            validate_track(track, 0.0)?;
+        }
+        let nexts = self
+            .nexts
+            .as_ref()
+            .ok_or_else(|| AudioError("Audio worker is unavailable".into()))?;
+        self.prefetch_cancel.cancel();
+        self.prefetch_cancel = CancellationToken::new();
+        self.prefetch_sequence += 1;
+        self.next_source_rate = None;
+        let sequence = self.prefetch_sequence;
+        nexts
+            .send(NextMessage::Cancel { sequence })
+            .map_err(|_| AudioError("Audio worker is unavailable".into()))?;
+        if let Some(track) = track {
+            prefetch::spawn(
+                &self.runtime,
+                track,
+                self.prefetch_cancel.clone(),
+                nexts.clone(),
+                sequence,
+            );
+        }
         Ok(())
     }
 
@@ -116,6 +170,9 @@ impl Engine {
     }
 
     pub fn seek(&mut self, position: f64) -> Result<(), AudioError> {
+        if let Some(pending) = self.pending_commit.take() {
+            self.track = Some(pending.track);
+        }
         let track = self
             .track
             .as_ref()
@@ -143,72 +200,23 @@ impl Engine {
 
     pub fn stop(&mut self) {
         self.cancel.cancel();
+        self.prefetch_cancel.cancel();
         self.pause(true);
         self.generation += 1;
         self.track = None;
+        self.pending_commit = None;
         self.updates = None;
         self.seeks = None;
+        self.nexts = None;
         self.output = None;
         self.producer = None;
         self.complete = false;
         self.error = None;
         self.source_rate = None;
+        self.next_source_rate = None;
         self.clock
             .generation
             .store(self.generation, Ordering::Release);
-    }
-
-    pub fn snapshot(&mut self) -> Snapshot {
-        self.drain_updates();
-        let position = match self.audible_position() {
-            Ok(position) => position,
-            Err(error) => {
-                self.error = Some(error.0);
-                self.pause(true);
-                0.0
-            }
-        };
-        let paused = self.clock.paused.load(Ordering::Acquire);
-        let duration = self.track.as_ref().map_or(0.0, |track| track.duration);
-        let empty = self.clock.produced.load(Ordering::Acquire)
-            <= self.clock.consumed.load(Ordering::Acquire);
-        let ended = self.complete && empty;
-        Snapshot {
-            instance_id: self.track.as_ref().map(|t| t.instance_id.clone()),
-            queue_revision: self.track.as_ref().map_or(0, |t| t.queue_revision),
-            position,
-            duration,
-            paused,
-            buffering: self.track.is_some()
-                && !self.complete
-                && (!self.clock.started.load(Ordering::Acquire)
-                    || self.clock.starved.load(Ordering::Acquire)),
-            ended,
-            error: self.error.clone(),
-            underruns: self
-                .output
-                .as_ref()
-                .map_or(0, |o| o.clock.underruns.load(Ordering::Relaxed)),
-            sample_rate: self.output.as_ref().map_or(0, |o| o.rate),
-            output_latency_ms: self.output.as_ref().map_or(0.0, |o| {
-                f64::from_bits(o.clock.latency.load(Ordering::Relaxed)) * 1000.0
-            }),
-        }
-    }
-
-    fn audible_position(&mut self) -> Result<f64, AudioError> {
-        if self.clock.failed.load(Ordering::Acquire) {
-            return Err(AudioError("Output device disconnected or failed".into()));
-        }
-        let position = f64::from_bits(self.clock.position.load(Ordering::Acquire));
-        if self.clock.consumed.load(Ordering::Acquire) == 0 {
-            return Ok(position);
-        }
-        let speed = self.current_settings()?.speed;
-        Ok(
-            (position - f64::from_bits(self.clock.latency.load(Ordering::Relaxed)) * speed)
-                .max(0.0),
-        )
     }
 
     fn current_settings(&self) -> Result<Settings, AudioError> {
@@ -234,8 +242,16 @@ impl Engine {
                         track.duration = duration;
                     }
                 }
+                Update::NextSourceRate(sequence, rate) if sequence == self.prefetch_sequence => {
+                    self.next_source_rate = Some(rate);
+                }
                 Update::Complete(generation) if generation == self.generation => {
                     self.complete = true
+                }
+                Update::Committed(generation, track, consumed_at)
+                    if generation == self.generation =>
+                {
+                    self.pending_commit = Some(PendingCommit { track, consumed_at });
                 }
                 Update::Error(generation, message) if generation == self.generation => {
                     self.error = Some(message);
@@ -251,6 +267,7 @@ impl Engine {
 impl Drop for Engine {
     fn drop(&mut self) {
         self.cancel.cancel();
+        self.prefetch_cancel.cancel();
     }
 }
 

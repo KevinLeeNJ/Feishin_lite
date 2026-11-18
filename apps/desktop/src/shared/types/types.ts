@@ -155,6 +155,7 @@ export enum PlayerStatus {
 export enum PlayerStyle {
     CROSSFADE = 'crossfade',
     GAPLESS = 'gapless',
+    NONE = 'none',
 }
 
 export enum PlayerType {

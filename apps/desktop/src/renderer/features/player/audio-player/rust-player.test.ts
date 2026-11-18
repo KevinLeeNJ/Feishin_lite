@@ -34,29 +34,40 @@ vi.mock('./native-playback-clock', () => ({
     freezeNativePlaybackClock: vi.fn(),
     updateNativePlaybackClock: vi.fn(),
 }));
-vi.mock('/@/renderer/store', () => ({
-    setTimestamp: vi.fn(),
-    usePlaybackSettings: () => ({}),
-    usePlayerData: () => ({ currentSong: fixture.song, status: fixture.status }),
-    usePlayerStore: {
-        getState: () => ({
-            getCurrentSong: () => fixture.song,
-            player: { muted: true, speed: 1, status: fixture.status, volume: 0 },
-        }),
-    },
-    useSettingsStore: {
-        getState: () => ({
-            playback: {
-                compressor: { enabled: false },
-                equalizer: { enabled: false },
-                mpvProperties: { audioExclusiveMode: 'no', audioSampleRateHz: 0 },
-                transcode: {},
-            },
-        }),
-    },
-    useTimestampStoreBase: { getState: () => ({ timestamp: fixture.timestamp }) },
-}));
-vi.mock('/@/renderer/utils/logger', () => ({ logger: { error: vi.fn() } }));
+vi.mock('/@/renderer/store', () => {
+    const state = () => ({
+        getCurrentSong: () => fixture.song,
+        player: {
+            muted: true,
+            pauseOnNextSongEnd: false,
+            repeat: 'none',
+            speed: 1,
+            status: fixture.status,
+            volume: 0,
+        },
+    });
+    return {
+        setTimestamp: vi.fn(),
+        usePlaybackSettings: () => ({ mpvProperties: {} }),
+        usePlayerData: () => ({ currentSong: fixture.song, status: fixture.status }),
+        usePlayerStore: Object.assign(
+            (selector: (value: ReturnType<typeof state>) => unknown) => selector(state()),
+            { getState: state },
+        ),
+        useSettingsStore: {
+            getState: () => ({
+                playback: {
+                    compressor: { enabled: false },
+                    equalizer: { enabled: false },
+                    mpvProperties: { audioExclusiveMode: 'no', audioSampleRateHz: 0 },
+                    transcode: {},
+                },
+            }),
+        },
+        useTimestampStoreBase: { getState: () => ({ timestamp: fixture.timestamp }) },
+    };
+});
+vi.mock('/@/renderer/utils/logger', () => ({ logger: { error: vi.fn(), warn: vi.fn() } }));
 vi.mock('/@/shared/components/toast/toast', () => ({ toast: { error: vi.fn() } }));
 
 import { RustPlayer } from './rust-player';

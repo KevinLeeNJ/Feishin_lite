@@ -11,12 +11,14 @@ it('uses the real Rust sidecar for handshake, health, device enumeration and shu
     const diagnostic = vi.fn();
     const client = await BackendClient.start(executable, diagnostic);
     try {
-        const [health, devices] = await Promise.all([
+        const [health, devices, visualizer] = await Promise.all([
             client.request('health'),
             client.request('listOutputDevices'),
+            client.request('visualizerSamples'),
         ]);
         expect(health.uptimeMs).toBeGreaterThanOrEqual(0);
         expect(devices.devices.every((device) => device.id.length > 0)).toBe(true);
+        expect(visualizer.samples).toBeNull();
         expect(diagnostic).not.toHaveBeenCalled();
     } finally {
         await client.stop();

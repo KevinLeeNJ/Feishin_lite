@@ -251,93 +251,10 @@ export const MpvSettings = memo(() => {
         },
     ];
 
-    const replayGainOptions: SettingOption[] = [
-        {
-            control: (
-                <Select
-                    data={[
-                        {
-                            label: t('setting.replayGainMode', {
-                                context: 'optionNone',
-                            }),
-                            value: 'no',
-                        },
-                        {
-                            label: t('setting.replayGainMode', {
-                                context: 'optionTrack',
-                            }),
-                            value: 'track',
-                        },
-                        {
-                            label: t('setting.replayGainMode', {
-                                context: 'optionAlbum',
-                            }),
-                            value: 'album',
-                        },
-                    ]}
-                    defaultValue={settings.mpvProperties.replayGainMode}
-                    onChange={(e) => handleSetMpvProperty('replayGainMode', e)}
-                />
-            ),
-            description: t('setting.replayGainMode', {
-                context: 'description',
-
-                ReplayGain: 'ReplayGain',
-            }),
-            note: t('common.restartRequired'),
-            title: t('setting.replayGainMode', { ReplayGain: 'ReplayGain' }),
-        },
-        {
-            control: (
-                <NumberInput
-                    defaultValue={settings.mpvProperties.replayGainPreampDB}
-                    onChange={(e) => handleSetMpvProperty('replayGainPreampDB', Number(e) || 0)}
-                    width={75}
-                />
-            ),
-            description: t('setting.replayGainMode', {
-                context: 'description',
-
-                ReplayGain: 'ReplayGain',
-            }),
-            title: t('setting.replayGainPreamp', { ReplayGain: 'ReplayGain' }),
-        },
-        {
-            control: (
-                <Switch
-                    defaultChecked={settings.mpvProperties.replayGainClip}
-                    onChange={(e) =>
-                        handleSetMpvProperty('replayGainClip', e.currentTarget.checked)
-                    }
-                />
-            ),
-            description: t('setting.replayGainClipping', {
-                context: 'description',
-
-                ReplayGain: 'ReplayGain',
-            }),
-            title: t('setting.replayGainClipping', { ReplayGain: 'ReplayGain' }),
-        },
-        {
-            control: (
-                <NumberInput
-                    defaultValue={settings.mpvProperties.replayGainFallbackDB}
-                    onBlur={(e) =>
-                        handleSetMpvProperty('replayGainFallbackDB', Number(e.currentTarget.value))
-                    }
-                    width={75}
-                />
-            ),
-            description: t('setting.replayGainFallback', { ReplayGain: 'ReplayGain' }),
-            title: t('setting.replayGainFallback', { ReplayGain: 'ReplayGain' }),
-        },
-    ];
-
     return (
         <>
             <SettingsSection options={options} />
             <SettingsSection options={generalOptions} />
-            <SettingsSection options={replayGainOptions} />
         </>
     );
 });

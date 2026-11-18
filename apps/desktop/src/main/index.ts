@@ -27,6 +27,7 @@ import path, { join } from 'path';
 import semver from 'semver';
 
 import packageJson from '../../package.json';
+import { isPermissionAllowed } from './features/core/permissions';
 import { disableMediaKeys, enableMediaKeys } from './features/core/player/media-keys';
 import { shutdownServer } from './features/core/remote';
 import { store } from './features/core/settings';
@@ -1185,20 +1186,11 @@ if (!singleInstance) {
                 });
             });
 
-            // Chromium 43 enforces Local Network Access: a request from the file:// renderer
-            // to a private address needs this permission, which is denied without a handler,
-            // so a server on a LAN address cannot be reached at all (jeffvli/feishin#2430).
-            const ALLOWED_PERMISSIONS = new Set([
-                'local-fonts',
-                'local-network',
-                'local-network-access',
-                'loopback-network',
-            ]);
             session.defaultSession.setPermissionCheckHandler((_wc, permission) =>
-                ALLOWED_PERMISSIONS.has(permission),
+                isPermissionAllowed(permission),
             );
             session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) =>
-                callback(ALLOWED_PERMISSIONS.has(permission)),
+                callback(isPermissionAllowed(permission)),
             );
 
             session.defaultSession.webRequest.onHeadersReceived((details, callback) => {

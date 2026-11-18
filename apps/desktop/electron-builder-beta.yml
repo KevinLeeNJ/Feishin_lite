@@ -72,3 +72,5 @@ publish:
     repo: feishin
     channel: beta
     releaseType: draft
+
+afterPack: scripts/package-backend.mjs

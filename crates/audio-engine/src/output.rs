@@ -36,6 +36,8 @@ pub struct Clock {
     pub latency: AtomicU64,
     pub finished: AtomicBool,
     pub started: AtomicBool,
+    #[cfg(target_os = "windows")]
+    pub visualizer: crate::visualizer::VisualizerTap,
 }
 
 pub struct Output {

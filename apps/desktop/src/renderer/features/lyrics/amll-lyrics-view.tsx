@@ -2,7 +2,7 @@ import type { LyricLineMouseEvent } from '@applemusic-like-lyrics/core';
 
 import { LyricPlayer, type LyricPlayerRef } from '@applemusic-like-lyrics/react';
 import isElectron from 'is-electron';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react';
 import '@applemusic-like-lyrics/core/style.css';
 
 import styles from './amll-lyrics-view.module.css';
@@ -13,6 +13,10 @@ import {
     type WordRomanizationTrack,
 } from '/@/renderer/features/lyrics/api/to-amll-lyrics';
 import { useAmllPlaybackClock } from '/@/renderer/features/lyrics/hooks/use-amll-playback-clock';
+import {
+    nativePlaybackRunning,
+    subscribeNativePlaybackRunning,
+} from '/@/renderer/features/player/audio-player/native-playback-clock';
 import {
     useLyricsDisplaySettings,
     useLyricsSettings,
@@ -88,6 +92,13 @@ export const AmllLyricsView = ({
     const displaySettings = useLyricsDisplaySettings(settingsKey);
     const { alignment, followScrollAlignment, showMatch, showProvider } = useLyricsSettings();
     const status = usePlayerStoreBase((state) => state.player.status);
+    // A seek into unbuffered data (or an underrun) stalls the transport while status stays
+    // PLAYING. AMLL's word fill runs on Web Animations timelines that only pause through the
+    // playing flag, so gate it on the native clock actually advancing.
+    const transportRunning = useSyncExternalStore(
+        subscribeNativePlaybackRunning,
+        nativePlaybackRunning,
+    );
 
     const translationTrack = useMemo(() => {
         if (translationLyrics) return translationLyrics;
@@ -176,7 +187,7 @@ export const AmllLyricsView = ({
             disabled={preview}
             lyricLines={amllLines}
             onLyricLineClick={preview ? undefined : handleLineClick}
-            playing={preview ? false : status === PlayerStatus.PLAYING}
+            playing={preview ? false : status === PlayerStatus.PLAYING && transportRunning}
             ref={playerRef}
             style={wrapperStyle}
         />

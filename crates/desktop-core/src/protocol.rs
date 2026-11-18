@@ -21,6 +21,11 @@ struct Seek {
 struct Pause {
     paused: bool,
 }
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct PrepareNext {
+    track: Option<Track>,
+}
 
 pub const PROTOCOL_VERSION: u64 = 1;
 pub const CAPABILITIES: [&str; 3] = ["health", "listOutputDevices", "audio"];
@@ -95,7 +100,8 @@ impl Session {
                 json!({ "method": method, "uptimeMs": self.started.elapsed().as_millis() as u64 })
             }
             "listOutputDevices" => output_devices()?,
-            "load" | "configure" | "seek" | "setPaused" | "stop" | "snapshot" => {
+            "load" | "configure" | "seek" | "setPaused" | "stop" | "snapshot" | "prepareNext"
+            | "visualizerSamples" => {
                 return self.audio_command(method, params).map_err(|error| {
                     eprintln!("Audio command failed: {error}");
                     ("AUDIO_ERROR", "Audio command failed")
@@ -137,6 +143,13 @@ impl Session {
                 engine.pause(request.paused);
             }
             "stop" => engine.stop(),
+            "prepareNext" => {
+                let request: PrepareNext = serde_json::from_value(params)?;
+                engine.prepare_next(request.track)?;
+            }
+            "visualizerSamples" => {
+                return Ok(json!({ "method": method, "samples": engine.visualizer_samples()? }))
+            }
             "snapshot" => return Ok(json!({ "method": method, "snapshot": engine.snapshot() })),
             _ => unreachable!("validated audio method"),
         }

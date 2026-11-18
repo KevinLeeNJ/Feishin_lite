@@ -83,6 +83,9 @@ ipcMain.handle(AUDIO_CHANNEL, async (event, input: unknown) => {
         if ('snapshot' in result) {
             return result.snapshot;
         }
+        if ('samples' in result) {
+            return result.samples;
+        }
         return undefined;
     } catch (error) {
         log.error('Rust audio command failed', { method: command.method });

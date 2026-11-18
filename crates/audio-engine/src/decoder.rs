@@ -1,4 +1,4 @@
-use crate::model::AudioError;
+use crate::{model::AudioError, replay_gain::Tags};
 use symphonia::core::{
     audio::SampleBuffer,
     codecs::{Decoder, DecoderOptions},
@@ -16,6 +16,7 @@ pub struct DecoderStream {
     track_id: u32,
     pub rate: u32,
     pub duration: f64,
+    pub replay_gain: Tags,
     discard_until: f64,
     time_base: TimeBase,
 }
@@ -27,10 +28,15 @@ impl DecoderStream {
             enable_gapless: true,
             ..Default::default()
         };
-        let mut format = symphonia::default::get_probe()
+        let mut probed = symphonia::default::get_probe()
             .format(&Hint::new(), stream, &options, &MetadataOptions::default())
-            .map_err(decode_error)?
-            .format;
+            .map_err(decode_error)?;
+        let mut format = probed.format;
+        let tags = Tags::from_metadata(format.metadata());
+        let replay_gain = probed
+            .metadata
+            .get()
+            .map_or(tags, |meta| tags.or(Tags::from_metadata(meta)));
         let track = format
             .default_track()
             .ok_or_else(|| AudioError("No supported audio track".into()))?;
@@ -63,6 +69,7 @@ impl DecoderStream {
             track_id,
             rate,
             duration,
+            replay_gain,
             discard_until: start,
             time_base,
         })

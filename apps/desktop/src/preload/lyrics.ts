@@ -24,8 +24,9 @@ const cascadeWordLevelLyrics = (
     fallbacks: InternetProviderLyricSearchResponse[],
     options: LyricsFetchOptions,
     scope: LyricsScope,
+    song: QueueSong,
 ): Promise<null | ProviderLyricsResult> => {
-    return ipcRenderer.invoke('lyric-cascade-word-level', { fallbacks, options, scope });
+    return ipcRenderer.invoke('lyric-cascade-word-level', { fallbacks, options, scope, song });
 };
 
 const clearLyricsCache = (): Promise<void> => {

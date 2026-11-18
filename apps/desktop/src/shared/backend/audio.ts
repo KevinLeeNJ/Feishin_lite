@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+export const audioTransitionSchema = z
+    .object({
+        crossfadeDuration: z.number().min(0).max(21),
+        crossfadeStyle: z.enum(['equalPower', 'exponential', 'linear', 'sCurve']),
+        mode: z.enum(['gapless', 'crossfade', 'none']),
+    })
+    .strict();
+
 export const audioSettingsSchema = z
     .object({
         compressor: z
@@ -34,8 +42,18 @@ export const audioSettingsSchema = z
         fadeOnPause: z.boolean(),
         muted: z.boolean(),
         preservePitch: z.boolean(),
+        replayGain: z
+            .object({
+                clip: z.boolean(),
+                fallbackDb: z.number().finite().optional(),
+                mode: z.enum(['album', 'no', 'track']),
+                preampDb: z.number().finite(),
+            })
+            .strict()
+            .optional(),
         sampleRate: z.number().int().min(8000).max(384000).optional(),
         speed: z.number().min(0.5).max(2),
+        transition: audioTransitionSchema.optional(),
         volume: z.number().min(0).max(100),
     })
     .strict();
@@ -49,6 +67,15 @@ export const audioTrackSchema = z
         gainDb: z.number().min(-60).max(30),
         instanceId: z.string().min(1).max(128),
         queueRevision: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+        replayGain: z
+            .object({
+                albumGain: z.number().finite().optional(),
+                albumPeak: z.number().positive().finite().optional(),
+                trackGain: z.number().finite().optional(),
+                trackPeak: z.number().positive().finite().optional(),
+            })
+            .strict()
+            .optional(),
         url: z
             .string()
             .url()
@@ -86,6 +113,13 @@ export const audioCommandSchema = z.discriminatedUnion('method', [
         .strict(),
     z.object({ method: z.literal('stop') }).strict(),
     z.object({ method: z.literal('snapshot') }).strict(),
+    z.object({ method: z.literal('visualizerSamples') }).strict(),
+    z
+        .object({
+            method: z.literal('prepareNext'),
+            params: z.object({ track: audioTrackSchema.nullable() }).strict(),
+        })
+        .strict(),
 ]);
 
 export const audioSnapshotSchema = z
@@ -100,7 +134,16 @@ export const audioSnapshotSchema = z
         position: z.number().nonnegative(),
         queueRevision: z.number().int().nonnegative(),
         sampleRate: z.number().int().nonnegative(),
+        transitionRateMismatch: z.boolean().optional(),
         underruns: z.number().int().nonnegative(),
+    })
+    .strict();
+
+export const visualizerSamplesSchema = z
+    .object({
+        generation: z.number().int().nonnegative(),
+        pcm: z.string().min(8).max(204800).base64(),
+        sampleRate: z.number().int().min(8000).max(384000),
     })
     .strict();
 
@@ -108,3 +151,5 @@ export type AudioCommand = z.infer<typeof audioCommandSchema>;
 export type AudioSettings = z.infer<typeof audioSettingsSchema>;
 export type AudioSnapshot = z.infer<typeof audioSnapshotSchema>;
 export type AudioTrack = z.infer<typeof audioTrackSchema>;
+export type AudioTransition = z.infer<typeof audioTransitionSchema>;
+export type VisualizerSamples = z.infer<typeof visualizerSamplesSchema>;

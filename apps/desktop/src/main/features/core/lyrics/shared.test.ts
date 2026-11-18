@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { orderSearchResults, selectWordLevelFallbacks, stripTrailingTranslation } from './shared';
+import {
+    isPlausibleMatch,
+    orderSearchResults,
+    selectWordLevelFallbacks,
+    stripTrailingTranslation,
+} from './shared';
 
 import {
     InternetProviderLyricSearchResponse,
@@ -88,6 +93,60 @@ describe('orderSearchResults duration-aware ranking', () => {
 
         expect(ranked[0].id).toBe('synced');
     });
+
+    it('does not inflate the score for full-width vs half-width punctuation', () => {
+        const fullWidth: LyricSearchQuery = {
+            artist: '可不',
+            duration: 168,
+            name: "充分だよ。（That's Enough）",
+        };
+        const ranked = orderSearchResults({
+            params: fullWidth,
+            results: [
+                candidate({
+                    artist: '可不',
+                    duration: 168,
+                    id: 'half',
+                    name: "充分だよ。(That's Enough)",
+                }),
+            ],
+        });
+
+        expect(ranked[0].score).toBeLessThanOrEqual(0.55);
+    });
+});
+
+describe('isPlausibleMatch', () => {
+    const song: LyricSearchQuery = { artist: '可不', duration: 168, name: '夜曲（安静）' };
+
+    it('accepts a candidate whose core title is contained and shares an artist token', () => {
+        expect(isPlausibleMatch(candidate({ artist: '可不', name: '夜曲' }), song)).toBe(true);
+    });
+
+    it('rejects an unrelated title even when the artist matches', () => {
+        expect(isPlausibleMatch(candidate({ artist: '可不', name: '循迹' }), song)).toBe(false);
+    });
+
+    it('rejects a matching title whose artists share no token', () => {
+        expect(isPlausibleMatch(candidate({ artist: '王子健', name: '夜曲' }), song)).toBe(false);
+    });
+
+    it('matches a featured artist listed among multiple candidate artists', () => {
+        const featSong = { ...song, artist: 'MIMI feat. 可不' };
+        expect(isPlausibleMatch(candidate({ artist: '可不, MIMI', name: '夜曲' }), featSong)).toBe(
+            true,
+        );
+    });
+
+    it('accepts on title alone when either side lists no artist', () => {
+        expect(isPlausibleMatch(candidate({ artist: '', name: '夜曲' }), song)).toBe(true);
+        expect(isPlausibleMatch(candidate({ name: '夜曲' }), { ...song, artist: '' })).toBe(true);
+    });
+
+    it('rejects when either core title is empty', () => {
+        expect(isPlausibleMatch(candidate({ name: '（）' }), song)).toBe(false);
+        expect(isPlausibleMatch(candidate({ name: '夜曲' }), { ...song, name: '' })).toBe(false);
+    });
 });
 
 describe('stripTrailingTranslation', () => {
@@ -115,6 +174,13 @@ describe('stripTrailingTranslation', () => {
         expect(stripTrailingTranslation('晴天 (Live)')).toBe('晴天');
         expect(stripTrailingTranslation('（纯音乐）')).toBeNull();
         expect(stripTrailingTranslation('Song (unclosed')).toBeNull();
+    });
+
+    it('strips a translation that sits before a trailing feat credit', () => {
+        expect(stripTrailingTranslation("それで充分だよ。（That's Enough） (feat. 可不)")).toBe(
+            'それで充分だよ。 (feat. 可不)',
+        );
+        expect(stripTrailingTranslation('Song (Live) (feat. A)')).toBe('Song (feat. A)');
     });
 });
 

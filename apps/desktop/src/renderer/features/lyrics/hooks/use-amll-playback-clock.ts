@@ -2,7 +2,10 @@ import type { LyricPlayerRef } from '@applemusic-like-lyrics/react';
 
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 
-import { nativePlaybackTimeMs } from '/@/renderer/features/player/audio-player/native-playback-clock';
+import {
+    nativePlaybackTimeMs,
+    subscribeNativePlaybackRunning,
+} from '/@/renderer/features/player/audio-player/native-playback-clock';
 import { subscribePlayerSpeed, subscribePlayerStatus, usePlayerStoreBase } from '/@/renderer/store';
 import { subscribePlayerProgress, useTimestampStoreBase } from '/@/renderer/store/timestamp.store';
 import { PlayerStatus } from '/@/shared/types/types';
@@ -230,6 +233,17 @@ export const useAmllPlaybackClock = (
         });
         return unsubscribe;
     }, [enabled, interpolatedTimeMs, pushTime, resetAnchor]);
+
+    // Transport stalls (seek into unbuffered data, underrun) freeze the polled position, so
+    // progress events stop arriving while AMLL's word fill keeps running on its own Web
+    // Animations timeline. The clock publishes only running edges; re-sync as an explicit
+    // seek at both: entering, so the fill pauses at the exact frozen word position instead
+    // of wherever the animation ran to; leaving, so it resumes without the lead accumulated
+    // before the pause landed.
+    useEffect(() => {
+        if (!enabled) return;
+        return subscribeNativePlaybackRunning(() => pushTime(true));
+    }, [enabled, pushTime]);
 
     // Any lyric line rebuild (overlays resolving, settings change, or a fullscreen
     // remount) makes AMLL rebuild at time 0 through a stale internal ref. While

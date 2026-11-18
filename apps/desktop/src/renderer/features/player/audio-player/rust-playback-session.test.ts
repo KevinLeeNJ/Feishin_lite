@@ -230,3 +230,102 @@ describe('Rust playback race isolation', () => {
         expect(commands).toEqual([{ method: 'stop' }]);
     });
 });
+
+describe('Rust queue prefetch and commit', () => {
+    async function loaded() {
+        const fix = fixture();
+        await fix.session.load(
+            { duration: 100, gainDb: 0 },
+            async () => 'https://music/audio',
+            0,
+            false,
+            settings,
+        );
+        return fix;
+    }
+
+    function preparedTrack(commands: AudioCommand[]) {
+        const prepare = commands.find((command) => command.method === 'prepareNext');
+        if (!prepare || !('params' in prepare) || !prepare.params.track) {
+            throw new Error('Expected prepareNext');
+        }
+        return prepare.params.track;
+    }
+
+    it('defers prepareNext until the current load completes, sharing its revision', async () => {
+        const { commands, session } = fixture();
+        const url = deferred<string>();
+        const loading = session.load(
+            { duration: 100, gainDb: 0 },
+            () => url.promise,
+            0,
+            false,
+            settings,
+        );
+        await session.prepareNext({ duration: 80, gainDb: 0 }, async () => 'https://music/next');
+        expect(commands.filter((command) => command.method === 'prepareNext')).toHaveLength(0);
+        url.resolve('https://music/audio');
+        await loading;
+        const track = preparedTrack(commands);
+        const load = commands.find((command) => command.method === 'load');
+        if (!load) throw new Error('Expected load');
+        expect(track.url).toBe('https://music/next');
+        expect(track.queueRevision).toBe(load.params.track.queueRevision);
+        expect(track.instanceId).not.toBe(load.params.track.instanceId);
+    });
+
+    it('accepts the prepared instance at the audible commit and adopts it', async () => {
+        const { commands, pendingSnapshot, session } = await loaded();
+        await session.prepareNext({ duration: 80, gainDb: 0 }, async () => 'https://music/next');
+        const committed = snapshot(preparedTrack(commands));
+        const poll = session.poll();
+        pendingSnapshot.resolve(committed);
+        expect(await poll).toEqual(committed);
+        expect(session.activeInstanceId).not.toBe(committed.instanceId);
+        session.adoptCommit();
+        expect(session.activeInstanceId).toBe(committed.instanceId);
+    });
+
+    it('cancels a prepared next track and rejects its snapshots', async () => {
+        const { commands, pendingSnapshot, session } = await loaded();
+        await session.prepareNext({ duration: 80, gainDb: 0 }, async () => 'https://music/next');
+        const track = preparedTrack(commands);
+        await session.prepareNext(null, async () => '');
+        expect(commands.at(-1)).toEqual({ method: 'prepareNext', params: { track: null } });
+        const poll = session.poll();
+        pendingSnapshot.resolve(snapshot(track));
+        expect(await poll).toBeUndefined();
+    });
+
+    it('only prepares the most recent next track when URLs resolve out of order', async () => {
+        const { commands, session } = await loaded();
+        const slow = deferred<string>();
+        const first = session.prepareNext({ duration: 80, gainDb: 0 }, () => slow.promise);
+        const second = session.prepareNext(
+            { duration: 60, gainDb: 0 },
+            async () => 'https://music/c',
+        );
+        await second;
+        slow.resolve('https://music/b');
+        await first;
+        const prepares = commands.filter((command) => command.method === 'prepareNext');
+        expect(prepares).toHaveLength(1);
+        expect(preparedTrack(commands).url).toBe('https://music/c');
+    });
+
+    it('forgets the prepared instance when a new track loads', async () => {
+        const { commands, pendingSnapshot, session } = await loaded();
+        await session.prepareNext({ duration: 80, gainDb: 0 }, async () => 'https://music/next');
+        const track = preparedTrack(commands);
+        await session.load(
+            { duration: 50, gainDb: 0 },
+            async () => 'https://music/c',
+            0,
+            false,
+            settings,
+        );
+        const poll = session.poll();
+        pendingSnapshot.resolve(snapshot(track));
+        expect(await poll).toBeUndefined();
+    });
+});

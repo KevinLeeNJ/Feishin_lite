@@ -1,6 +1,7 @@
 import { ChangeEvent, memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useVisualizerExclusiveBlocked } from '/@/renderer/features/player/hooks/use-visualizer-exclusive-blocked';
 import { SidebarReorder } from '/@/renderer/features/settings/components/general/sidebar-reorder';
 import {
     SettingOption,
@@ -19,6 +20,7 @@ type PlaylistMode = 'compact' | 'expanded';
 
 export const SidebarSettings = memo(() => {
     const { t } = useTranslation();
+    const visualizerBlocked = useVisualizerExclusiveBlocked();
     const settings = useGeneralSettings();
     const { setSettings } = useSettingsStoreActions();
 
@@ -352,6 +354,7 @@ export const SidebarSettings = memo(() => {
                 <Switch
                     aria-label="Show visualizer in sidebar"
                     defaultChecked={settings.showVisualizerInSidebar}
+                    disabled={visualizerBlocked}
                     onChange={(e) => {
                         setSettings({
                             general: {
@@ -361,9 +364,9 @@ export const SidebarSettings = memo(() => {
                     }}
                 />
             ),
-            description: t('setting.showVisualizerInSidebar', {
-                context: 'description',
-            }),
+            description: visualizerBlocked
+                ? t('visualizer.exclusiveUnavailable')
+                : t('setting.showVisualizerInSidebar', { context: 'description' }),
             title: t('setting.showVisualizerInSidebar'),
         },
         {
@@ -371,6 +374,7 @@ export const SidebarSettings = memo(() => {
                 <Switch
                     aria-label="Combine lyrics and visualizer"
                     defaultChecked={settings.combinedLyricsAndVisualizer}
+                    disabled={visualizerBlocked}
                     onChange={(e) => {
                         setSettings({
                             general: {

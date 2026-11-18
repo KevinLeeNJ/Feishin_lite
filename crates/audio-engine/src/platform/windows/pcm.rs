@@ -13,16 +13,18 @@ pub(super) struct Buffer {
     bytes: Vec<u8>,
     format: WaveFormat,
     ramp: GainRamp,
+    exclusive: bool,
 }
 
 impl Buffer {
-    pub fn new(format: &WaveFormat, frames: usize) -> Self {
+    pub fn new(format: &WaveFormat, frames: usize, exclusive: bool) -> Self {
         let samples = frames * usize::from(format.get_nchannels());
         Self {
             samples: vec![0.0; samples],
             bytes: vec![0; frames * format.get_blockalign() as usize],
             format: format.clone(),
             ramp: GainRamp::default(),
+            exclusive,
         }
     }
 
@@ -43,10 +45,14 @@ impl Buffer {
             + f64::from(client.get_current_padding()?) / f64::from(rate);
         clock.latency.store(latency.to_bits(), Ordering::Release);
         let samples = &mut self.samples[..frames * channels];
+        let generation = clock.generation.load(Ordering::Acquire);
         render(samples, channels, rate, consumer, clock, &mut self.ramp);
         let bytes = &mut self.bytes[..frames * self.format.get_blockalign() as usize];
         encode(samples, bytes, &self.format)?;
         output.write_to_device(bytes, None)?;
+        if self.exclusive && generation == clock.generation.load(Ordering::Acquire) {
+            clock.visualizer.record(generation, rate, samples);
+        }
         Ok(())
     }
 }

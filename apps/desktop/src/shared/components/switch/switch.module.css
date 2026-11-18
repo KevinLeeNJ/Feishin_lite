@@ -13,4 +13,9 @@
             background: var(--theme-colors-primary-contrast);
         }
     }
+
+    input:disabled + & {
+        background-color: var(--theme-colors-surface);
+        opacity: 0.55;
+    }
 }

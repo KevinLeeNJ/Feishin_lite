@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     clearNativePlaybackClock,
     freezeNativePlaybackClock,
+    nativePlaybackRunning,
     nativePlaybackTimeMs,
+    subscribeNativePlaybackRunning,
     updateNativePlaybackClock,
 } from './native-playback-clock';
 
@@ -56,5 +58,49 @@ describe('native audio clock projection', () => {
         expect(nativePlaybackTimeMs()).toBe(10100);
         clearNativePlaybackClock();
         expect(nativePlaybackTimeMs()).toBeUndefined();
+    });
+});
+
+describe('native transport running signal', () => {
+    it('reports running without a native session so non-native clocks stay in charge', () => {
+        expect(nativePlaybackRunning()).toBe(true);
+    });
+
+    it('notifies subscribers only when the running flag flips', () => {
+        const listener = vi.fn();
+        const unsubscribe = subscribeNativePlaybackRunning(listener);
+
+        updateNativePlaybackClock(snapshot, 1);
+        expect(listener).not.toHaveBeenCalled();
+
+        updateNativePlaybackClock({ ...snapshot, buffering: true }, 1);
+        expect(listener).toHaveBeenCalledTimes(1);
+        expect(nativePlaybackRunning()).toBe(false);
+
+        updateNativePlaybackClock({ ...snapshot, buffering: true, position: 11 }, 1);
+        expect(listener).toHaveBeenCalledTimes(1);
+
+        updateNativePlaybackClock(snapshot, 1);
+        expect(listener).toHaveBeenCalledTimes(2);
+        expect(nativePlaybackRunning()).toBe(true);
+
+        unsubscribe();
+        updateNativePlaybackClock({ ...snapshot, paused: true }, 1);
+        expect(listener).toHaveBeenCalledTimes(2);
+    });
+
+    it('publishes the running edge on freeze and clear', () => {
+        const listener = vi.fn();
+        const unsubscribe = subscribeNativePlaybackRunning(listener);
+        updateNativePlaybackClock(snapshot, 1);
+
+        freezeNativePlaybackClock();
+        expect(nativePlaybackRunning()).toBe(false);
+        expect(listener).toHaveBeenCalledTimes(1);
+
+        clearNativePlaybackClock();
+        expect(nativePlaybackRunning()).toBe(true);
+        expect(listener).toHaveBeenCalledTimes(2);
+        unsubscribe();
     });
 });

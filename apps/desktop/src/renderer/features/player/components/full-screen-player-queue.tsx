@@ -8,6 +8,7 @@ import styles from './full-screen-player-queue.module.css';
 import { Lyrics } from '/@/renderer/features/lyrics/lyrics';
 import { PlayQueue } from '/@/renderer/features/now-playing/components/play-queue';
 import { FullScreenSimilarSongs } from '/@/renderer/features/player/components/full-screen-similar-songs';
+import { useVisualizerExclusiveBlocked } from '/@/renderer/features/player/hooks/use-visualizer-exclusive-blocked';
 import { useListSettings, usePlaybackSettings, useSettingsStore } from '/@/renderer/store';
 import {
     useFullScreenPlayerStore,
@@ -16,6 +17,7 @@ import {
 import { ActionIcon } from '/@/shared/components/action-icon/action-icon';
 import { Group } from '/@/shared/components/group/group';
 import { AppIcon } from '/@/shared/components/icon/icon';
+import { Text } from '/@/shared/components/text/text';
 import { ItemListKey } from '/@/shared/types/types';
 
 const AudioMotionAnalyzerVisualizer = lazy(() =>
@@ -61,6 +63,7 @@ const moduleContentVariants: Variants = {
 
 interface ControlItem {
     active: boolean;
+    disabled?: boolean;
     icon: keyof typeof AppIcon;
     label: string;
     onClick: () => void;
@@ -71,6 +74,8 @@ const Controls = () => {
     const { activeTab } = useFullScreenPlayerStore();
     const { setStore } = useFullScreenPlayerStoreActions();
     const { webAudio } = usePlaybackSettings();
+
+    const blocked = useVisualizerExclusiveBlocked();
 
     const toggleTab = (tab: string) => {
         setStore({ activeTab: activeTab === tab ? '' : tab });
@@ -101,6 +106,7 @@ const Controls = () => {
         if (webAudio) {
             items.push({
                 active: activeTab === 'visualizer',
+                disabled: blocked,
                 icon: 'audioLines',
                 label: t('page.fullscreenPlayer.visualizer'),
                 onClick: () => toggleTab('visualizer'),
@@ -109,7 +115,7 @@ const Controls = () => {
 
         return items;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab, setStore, t, webAudio]);
+    }, [activeTab, blocked, setStore, t, webAudio]);
 
     return (
         <Group
@@ -119,11 +125,16 @@ const Controls = () => {
             pos="absolute"
         >
             {headerItems.map((item) => (
-                <div key={`tab-${item.label}`}>
+                <div
+                    key={`tab-${item.label}`}
+                    title={item.disabled ? t('visualizer.exclusiveUnavailable') : undefined}
+                >
                     <ActionIcon
+                        aria-label={item.label}
+                        disabled={item.disabled}
                         icon={item.icon}
                         iconProps={{
-                            color: item.active ? 'primary' : undefined,
+                            color: item.active && !item.disabled ? 'primary' : undefined,
                             size: 'lg',
                         }}
                         onClick={item.onClick}
@@ -139,6 +150,8 @@ const Controls = () => {
 export const FullScreenPlayerControls = Controls;
 
 export const FullScreenPlayerQueue = () => {
+    const { t } = useTranslation();
+    const blocked = useVisualizerExclusiveBlocked();
     const { activeTab } = useFullScreenPlayerStore();
     const { webAudio } = usePlaybackSettings();
     const visualizerType = useSettingsStore((store) => store.visualizer.type);
@@ -202,13 +215,19 @@ export const FullScreenPlayerQueue = () => {
                         key="visualizer"
                         variants={moduleContentVariants}
                     >
-                        <Suspense fallback={<></>}>
-                            {visualizerType === 'butterchurn' ? (
-                                <ButterchurnVisualizer />
-                            ) : (
-                                <AudioMotionAnalyzerVisualizer />
-                            )}
-                        </Suspense>
+                        {blocked ? (
+                            <Text c="dimmed" p="md" size="sm">
+                                {t('visualizer.exclusiveUnavailable')}
+                            </Text>
+                        ) : (
+                            <Suspense fallback={<></>}>
+                                {visualizerType === 'butterchurn' ? (
+                                    <ButterchurnVisualizer />
+                                ) : (
+                                    <AudioMotionAnalyzerVisualizer />
+                                )}
+                            </Suspense>
+                        )}
                     </motion.div>
                 ) : null}
             </AnimatePresence>

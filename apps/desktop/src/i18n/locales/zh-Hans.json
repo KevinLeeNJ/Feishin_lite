@@ -254,7 +254,7 @@
     "setting": {
         "crossfadeStyle_description": "选择用于音频播放器的淡入淡出风格",
         "hotkey_favoriteCurrentSong": "收藏$t(common.currentSong)",
-        "audioExclusiveMode_description": "启用独占输出模式。在此模式下，系统通常被锁定为只有 MPV 能够输出音频",
+        "audioExclusiveMode_description": "让播放器独占选定的音频输出设备。",
         "disableLibraryUpdateOnStartup": "禁用启动时查询新版本",
         "gaplessAudio": "无缝音频",
         "audioPlayer_description": "选择用于播放的音频播放器",
@@ -347,6 +347,8 @@
         "hotkey_playbackPrevious": "上一首",
         "showSkipButtons_description": "在播放条显示或隐藏播放按钮",
         "playbackStyle": "播放风格",
+        "playbackStyleExclusiveAuto": "自动采样率的独占输出支持同采样率曲目间的过渡。不同采样率的曲目可通过固定输出采样率使用过渡。",
+        "playbackStyleRateMismatch": "下一首的采样率不同，本次将普通切歌。",
         "hotkey_toggleShuffle": "切换随机",
         "theme": "主题",
         "playbackStyle_description": "选择音频播放器的播放风格",
@@ -366,7 +368,8 @@
         "sidebarPlaylistList_description": "显示或隐藏侧边栏歌单列表",
         "sidePlayQueueStyle_description": "设置侧边播放列表样式",
         "replayGainMode": "{{ReplayGain}}模式",
-        "playbackStyle_optionNormal": "正常",
+        "playbackStyle_optionNormal": "无缝",
+        "playbackStyle_optionNone": "无",
         "windowBarStyle": "窗口顶栏风格",
         "replayGainFallback_description": "如果文件没有 {{ReplayGain}} 标签，则在数据库中应用增益",
         "hotkey_toggleRepeat": "切换循环",
@@ -1332,6 +1335,7 @@
         "yearLong": "年"
     },
     "visualizer": {
+        "exclusiveUnavailable": "当前系统的独占模式下，可视化不可用。",
         "configPasteFailed": "应用配置失败，请检查配置格式。",
         "configPasteReadFailed": "读取剪贴板失败",
         "configCopyFailed": "复制设置失败",

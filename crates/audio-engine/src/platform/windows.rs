@@ -90,7 +90,7 @@ fn run(
     let (client, format) = initialize_client(id, rate, exclusive)?;
     let rate = format.get_samplespersec();
     let (producer, mut consumer) = HeapRb::new(rate as usize / 10).split();
-    let mut buffer = pcm::Buffer::new(&format, client.get_buffer_size()? as usize);
+    let mut buffer = pcm::Buffer::new(&format, client.get_buffer_size()? as usize, exclusive);
     let render_client = client.get_audiorenderclient()?;
     buffer.write(&client, &render_client, &mut consumer, clock)?;
     client.start_stream()?;

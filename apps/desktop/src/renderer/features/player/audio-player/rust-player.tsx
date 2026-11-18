@@ -9,7 +9,9 @@ import {
     freezeNativePlaybackClock,
     updateNativePlaybackClock,
 } from './native-playback-clock';
+import { audioSettings } from './rust-audio-settings';
 import { RustPlaybackSession } from './rust-playback-session';
+import { replayGainTags } from './rust-replay-gain';
 
 import {
     setTimestamp,
@@ -20,48 +22,23 @@ import {
     useTimestampStoreBase,
 } from '/@/renderer/store';
 import { logger } from '/@/renderer/utils/logger';
-import { AudioSettings } from '/@/shared/backend/audio';
 import { toast } from '/@/shared/components/toast/toast';
-import { PlayerStatus } from '/@/shared/types/types';
+import { PlayerRepeat, PlayerStatus, PlayerStyle } from '/@/shared/types/types';
 
 let requestedSongKey: string | undefined;
 let fallbackForKey: string | undefined;
-
-function audioSettings(): AudioSettings {
-    const settings = useSettingsStore.getState().playback;
-    const player = usePlayerStore.getState().player;
-    return {
-        compressor: {
-            ...settings.compressor,
-            enabled:
-                settings.compressor.enabled && (settings.webAudio || settings.type === 'local'),
-        },
-        deviceId: settings.nativeAudioDeviceId ?? null,
-        equalizer: {
-            ...settings.equalizer,
-            enabled: settings.equalizer.enabled && (settings.webAudio || settings.type === 'local'),
-        },
-        exclusive: settings.mpvProperties.audioExclusiveMode === 'yes',
-        fadeOnPause: settings.audioFadeOnStatusChange,
-        muted: player.muted,
-        preservePitch: settings.preservePitch,
-        ...(settings.mpvProperties.audioSampleRateHz
-            ? { sampleRate: settings.mpvProperties.audioSampleRateHz }
-            : {}),
-        speed: player.speed,
-        volume: player.volume,
-    };
-}
+let preparedSongKey: string | undefined;
 
 let session: RustPlaybackSession | undefined;
 
 export function RustPlayer() {
-    const { currentSong, status } = usePlayerData();
+    const { currentSong, nextSong, status } = usePlayerData();
     const settings = usePlaybackSettings();
     useRustSession();
     useRustTrack(currentSong);
     useRustSettings(status, settings);
     useRustControls();
+    useRustPrepare(currentSong, nextSong, settings);
     useRustProgress(currentSong?._uniqueId);
     return null;
 }
@@ -89,7 +66,7 @@ async function loadCurrent(force = false, forceTranscode = false): Promise<void>
     clearNativePlaybackClock();
     const transcode = useSettingsStore.getState().playback.transcode;
     await current.load(
-        { duration: song.duration, gainDb: 0 },
+        { duration: song.duration, gainDb: 0, replayGain: replayGainTags(song) },
         async () => {
             await initializeNativeDevice();
             await current.configure(audioSettings());
@@ -106,7 +83,9 @@ async function loadCurrent(force = false, forceTranscode = false): Promise<void>
 
 function reportError(error: unknown): void {
     logger.error('Rust playback failed', { error });
+    clearNativePlaybackClock();
     requestedSongKey = undefined;
+    preparedSongKey = undefined;
     void session
         ?.stop()
         .catch((failure: unknown) => logger.error('Rust audio stop failed', { error: failure }));
@@ -121,7 +100,15 @@ function reportError(error: unknown): void {
 async function updateProgress(progress: { endedInstance: null | string }): Promise<void> {
     const current = session;
     const snapshot = await current?.poll();
-    if (!snapshot || current !== session) {
+    if (!snapshot || !current || current !== session) {
+        return;
+    }
+    if (snapshot.instanceId !== current.activeInstanceId) {
+        current.adoptCommit();
+        clearNativePlaybackClock();
+        requestedSongKey = preparedSongKey;
+        preparedSongKey = undefined;
+        usePlayerStore.getState().mediaAutoNext();
         return;
     }
     if (snapshot.error) {
@@ -183,6 +170,58 @@ function useRustControls(): void {
     );
 }
 
+function useRustPrepare(
+    currentSong: ReturnType<typeof usePlayerData>['currentSong'],
+    nextSong: ReturnType<typeof usePlayerData>['nextSong'],
+    settings: ReturnType<typeof usePlaybackSettings>,
+): void {
+    const repeat = usePlayerStore((state) => state.player.repeat);
+    const pauseOnNextSongEnd = usePlayerStore((state) => state.player.pauseOnNextSongEnd);
+    const prefetchEnabled = usePlayerStore(
+        (state) => state.player.transitionType !== PlayerStyle.NONE,
+    );
+    const deviceId = settings.nativeAudioDeviceId;
+    const exclusive = settings.mpvProperties.audioExclusiveMode;
+    const sampleRate = settings.mpvProperties.audioSampleRateHz;
+    useEffect(() => {
+        const current = session;
+        preparedSongKey = undefined;
+        if (!current || !currentSong) {
+            return;
+        }
+        const prepare = async () => {
+            // "none" ends each track naturally, so prefetching the next one is wasted work.
+            if (
+                !nextSong ||
+                repeat === PlayerRepeat.ONE ||
+                pauseOnNextSongEnd ||
+                !prefetchEnabled
+            ) {
+                await current.prepareNext(null, async () => '');
+                return;
+            }
+            const transcode = useSettingsStore.getState().playback.transcode;
+            await current.prepareNext(
+                { duration: nextSong.duration, gainDb: 0, replayGain: replayGainTags(nextSong) },
+                () => getSongUrl(nextSong, transcode),
+            );
+            preparedSongKey = `${nextSong._serverId}/${nextSong._uniqueId}`;
+        };
+        void prepare().catch((error: unknown) =>
+            logger.warn('Rust queue prefetch failed', { error }),
+        );
+    }, [
+        currentSong,
+        nextSong,
+        repeat,
+        pauseOnNextSongEnd,
+        prefetchEnabled,
+        deviceId,
+        exclusive,
+        sampleRate,
+    ]);
+}
+
 function useRustProgress(songId: string | undefined): void {
     useEffect(() => {
         let cancelled = false;
@@ -215,6 +254,7 @@ function useRustSession(): void {
         const current = new RustPlaybackSession(window.api.hostBridge.audio);
         session = current;
         requestedSongKey = undefined;
+        preparedSongKey = undefined;
         return () => {
             clearNativePlaybackClock();
             if (session === current) {
@@ -231,6 +271,12 @@ function useRustSettings(
     status: PlayerStatus,
     settings: ReturnType<typeof usePlaybackSettings>,
 ): void {
+    // Transition fields live in the player store, not the settings store; without them in the
+    // deps a mid-playback style/duration change would never reach the engine's configure.
+    const transitionKey = usePlayerStore(
+        (state) =>
+            `${state.player.transitionType}|${state.player.crossfadeDuration}|${state.player.crossfadeStyle}`,
+    );
     useEffect(() => {
         if (status !== PlayerStatus.PLAYING) {
             freezeNativePlaybackClock();
@@ -239,7 +285,7 @@ function useRustSettings(
     }, [status]);
     useEffect(() => {
         void session?.configure(audioSettings()).catch(reportError);
-    }, [settings]);
+    }, [settings, transitionKey]);
 }
 
 function useRustTrack(song: ReturnType<typeof usePlayerData>['currentSong']): void {
@@ -247,6 +293,7 @@ function useRustTrack(song: ReturnType<typeof usePlayerData>['currentSong']): vo
         if (song) {
             void loadCurrent().catch(reportError);
         } else {
+            clearNativePlaybackClock();
             requestedSongKey = undefined;
             void session?.stop().catch(reportError);
         }

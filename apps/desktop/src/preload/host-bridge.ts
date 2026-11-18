@@ -8,6 +8,7 @@ export const hostBridge: HostBridge = {
     audio: {
         command: (command) => ipcRenderer.invoke(AUDIO_CHANNEL, command),
         snapshot: () => ipcRenderer.invoke(AUDIO_CHANNEL, { method: 'snapshot' }),
+        visualizerSamples: () => ipcRenderer.invoke(AUDIO_CHANNEL, { method: 'visualizerSamples' }),
     },
     backend: {
         health: () => ipcRenderer.invoke(BACKEND_CHANNEL, 'health'),

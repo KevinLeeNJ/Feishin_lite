@@ -16,10 +16,17 @@ export default defineConfig({
         include: [
             'src/shared/backend/**/*.test.ts',
             'src/main/features/core/backend/**/*.test.ts',
+            'src/main/features/core/permissions.test.ts',
             'src/renderer/features/player/audio-player/**/*.test.ts',
+            'src/renderer/features/player/audio-player/**/*.test.tsx',
+            'src/renderer/features/player/hooks/**/*.test.ts',
+            'src/renderer/features/player/components/transition-config.test.tsx',
+            'src/renderer/features/visualizer/*.test.ts',
             'src/shared/lyrics/**/*.test.ts',
             'src/main/features/core/lyrics/**/*.test.ts',
             'src/renderer/features/lyrics/api/**/*.test.ts',
+            'src/renderer/features/lyrics/hooks/**/*.test.ts',
+            'src/renderer/features/lyrics/*.test.tsx',
         ],
     },
 });

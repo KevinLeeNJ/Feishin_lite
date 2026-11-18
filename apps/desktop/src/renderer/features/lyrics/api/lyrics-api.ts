@@ -277,6 +277,7 @@ export async function fetchWordLevelCascade(
         fallbacks,
         readFetchOptions(),
         buildScope(serverId, song),
+        song,
     );
 }
 

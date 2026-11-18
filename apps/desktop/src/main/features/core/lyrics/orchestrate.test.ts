@@ -262,6 +262,24 @@ describe('getRemoteLyrics translated-title retry', () => {
         expect(cacheMocks.writeNegativeCache).toHaveBeenCalledWith(scope);
     });
 
+    it('retries with the translation removed but the feat credit kept', async () => {
+        const featSong = {
+            ...song,
+            name: "それで充分だよ。（That's Enough） (feat. 可不)",
+        } as Song;
+        const stripped = 'それで充分だよ。 (feat. 可不)';
+        providerMocks.search.mockImplementation(async (params: LyricSearchQuery) =>
+            params.name === stripped ? [candidate({ id: 'good', name: stripped })] : [unrelated],
+        );
+        providerMocks.fetch.mockResolvedValue(providerResult());
+
+        const result = await getRemoteLyrics(featSong, fetchOptions(), scope);
+
+        expect(providerMocks.search.mock.calls[1][0].name).toBe(stripped);
+        expect(providerMocks.fetch).toHaveBeenCalledWith('good', expect.anything());
+        expect(result.result).not.toBeNull();
+    });
+
     it('keeps the original ranking when the retry still fails to match', async () => {
         providerMocks.search.mockResolvedValue([unrelated]);
 
@@ -310,7 +328,7 @@ describe('cascadeWordLevelLyrics', () => {
             .mockResolvedValueOnce(wordResult);
         const options = fetchOptions();
 
-        const result = await cascadeWordLevelLyrics(fallbacks, options, scope);
+        const result = await cascadeWordLevelLyrics(fallbacks, options, scope, song);
 
         expect(result).toEqual(wordResult);
         expect(providerMocks.fetch).toHaveBeenCalledTimes(2);
@@ -321,7 +339,7 @@ describe('cascadeWordLevelLyrics', () => {
     it('records a cascade failure when no candidate is word-level', async () => {
         providerMocks.fetch.mockResolvedValue(providerResult());
 
-        const result = await cascadeWordLevelLyrics(fallbacks, fetchOptions(), scope);
+        const result = await cascadeWordLevelLyrics(fallbacks, fetchOptions(), scope, song);
 
         expect(result).toBeNull();
         expect(cacheMocks.recordCascadeFailure).toHaveBeenCalledWith(scope);
@@ -336,9 +354,33 @@ describe('cascadeWordLevelLyrics', () => {
             .mockRejectedValueOnce(new Error('network'))
             .mockResolvedValueOnce(wordResult);
 
-        const result = await cascadeWordLevelLyrics(fallbacks, fetchOptions(), scope);
+        const result = await cascadeWordLevelLyrics(fallbacks, fetchOptions(), scope, song);
 
         expect(result).toEqual(wordResult);
         expect(cacheMocks.recordCascadeFailure).not.toHaveBeenCalled();
+    });
+
+    it('skips a cached fallback whose title or artist does not match the song', async () => {
+        const poisoned = candidate({
+            artist: '王子健',
+            id: 'poison',
+            name: '循迹',
+            source: LyricSource.QQMUSIC,
+        });
+        const wordResult = providerResult({
+            lyrics: { ...providerResult().lyrics, timingGranularity: 'word' },
+        });
+        providerMocks.fetch.mockResolvedValue(wordResult);
+
+        const result = await cascadeWordLevelLyrics(
+            [poisoned, ...fallbacks],
+            fetchOptions(),
+            scope,
+            song,
+        );
+
+        expect(result).toEqual(wordResult);
+        expect(providerMocks.fetch).toHaveBeenCalledTimes(1);
+        expect(providerMocks.fetch).toHaveBeenCalledWith('first', expect.anything());
     });
 });

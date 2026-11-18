@@ -73,3 +73,5 @@ publish:
     channel: alpha
     region: auto
     endpoint: https://065f090c64de2dc707dd70ac72db9669.r2.cloudflarestorage.com
+
+afterPack: scripts/package-backend.mjs

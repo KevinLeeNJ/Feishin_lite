@@ -6,7 +6,12 @@ import {
     writeNegativeCache,
 } from './cache';
 import { getProvider, PROVIDERS } from './providers/registry';
-import { orderSearchResults, selectWordLevelFallbacks, stripTrailingTranslation } from './shared';
+import {
+    isPlausibleMatch,
+    orderSearchResults,
+    selectWordLevelFallbacks,
+    stripTrailingTranslation,
+} from './shared';
 
 import log from '/@/main/logger';
 import {
@@ -156,7 +161,9 @@ export const getRemoteLyrics = async (
         });
     };
     const isMatch = (candidate?: InternetProviderLyricSearchResponse) =>
-        !!candidate && (candidate.score ?? 1) <= MATCH_THRESHOLD;
+        !!candidate &&
+        (candidate.score ?? 1) <= MATCH_THRESHOLD &&
+        isPlausibleMatch(candidate, params);
 
     let ranked = await searchAndRank(song.name);
 
@@ -203,13 +210,19 @@ export const getRemoteLyrics = async (
  * Word-level-first cascade: try the fallback candidates in ranked order (one per source) and
  * return the first word-level result, caching it so later plays skip the cascade. Non-word-level
  * results are discarded (the primary result stays displayed). Returns null when none is word-level.
+ * Cached fallbacks may predate the plausibility gate, so every candidate is re-checked here.
  */
 export const cascadeWordLevelLyrics = async (
     fallbacks: InternetProviderLyricSearchResponse[],
     options: LyricsFetchOptions,
     scope: LyricsScope,
+    song: Song,
 ): Promise<null | ProviderLyricsResult> => {
+    const params = buildSearchParams(song);
     for (const candidate of fallbacks) {
+        if (!isPlausibleMatch(candidate, params)) {
+            continue;
+        }
         try {
             const result = await fetchBestMatch(candidate, options);
             if (result && result.lyrics.timingGranularity === 'word') {

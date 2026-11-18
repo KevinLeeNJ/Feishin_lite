@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-import { AudioCommand, AudioSnapshot, audioSnapshotSchema } from './audio';
+import {
+    AudioCommand,
+    AudioSnapshot,
+    audioSnapshotSchema,
+    VisualizerSamples,
+    visualizerSamplesSchema,
+} from './audio';
 import { BACKEND_PROTOCOL_VERSION } from './constants';
 
 export const backendMethodSchema = z.enum([
@@ -14,6 +20,8 @@ export const backendMethodSchema = z.enum([
     'setPaused',
     'stop',
     'snapshot',
+    'prepareNext',
+    'visualizerSamples',
 ]);
 export type BackendMethod = z.infer<typeof backendMethodSchema>;
 
@@ -38,7 +46,14 @@ export const backendResultSchema = z.discriminatedUnion('method', [
     z.object({ method: z.literal('seek') }).strict(),
     z.object({ method: z.literal('setPaused') }).strict(),
     z.object({ method: z.literal('stop') }).strict(),
+    z.object({ method: z.literal('prepareNext') }).strict(),
     z.object({ method: z.literal('snapshot'), snapshot: audioSnapshotSchema }).strict(),
+    z
+        .object({
+            method: z.literal('visualizerSamples'),
+            samples: visualizerSamplesSchema.nullable(),
+        })
+        .strict(),
 ]);
 
 const envelope = {
@@ -63,6 +78,7 @@ export interface HostBridge {
     audio: {
         command(command: AudioCommand): Promise<void>;
         snapshot(): Promise<AudioSnapshot>;
+        visualizerSamples(): Promise<null | VisualizerSamples>;
     };
     backend: {
         health(): Promise<Extract<BackendResult, { method: 'health' }>>;
